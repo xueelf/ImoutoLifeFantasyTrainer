@@ -1,13 +1,12 @@
 local config = require("config")
 local cover = require("views.cover")
 
-local feature_width = config.window.width - cover.width
-local feature_height = config.window.height
+local width, height = config.window.width - cover.width, config.window.height
 
 local function create(owner)
     local Feature = createListView(owner)
 
-    Feature.Width, Feature.Height = feature_width, feature_height
+    Feature.Width, Feature.Height = width, height
     Feature.Left = cover.width
     Feature.BorderStyle = bsNone
     Feature.RowSelect = true
