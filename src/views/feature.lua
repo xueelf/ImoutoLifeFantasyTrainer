@@ -1,18 +1,49 @@
 local config = require("config")
 local keymap = require("keymap")
+local cheat = require("cheat")
 local cover = require("views.cover")
 
-local status = {
-    enable = "●",
-    disable = "○",
-}
 local header = {
     { title = "状态", span = 45 },
     { title = "热键", span = 45 },
     { title = "功能", span = 140 },
     { title = "描述", span = 170 },
 }
+local status = {
+    enable = "●",
+    disable = "○",
+}
 local width, height = config.window.width - cover.width, config.window.height
+
+local pool = {}
+
+local function addShortcut(owner, code, action)
+    if not owner then
+        return
+    end
+    local callback = function()
+        local method = cheat[action]
+
+        if not method then
+            showMessage(string.format('Action "%s" is not defined', action))
+        else
+            local enabled = owner.Caption == status.enable
+            local success, result = pcall(method)
+
+            if success then
+                owner.Caption = enabled and status.disable or status.enable
+            else
+                showMessage(result)
+            end
+        end
+    end
+    createHotkey(callback, code)
+    table.insert(pool, callback)
+end
+
+local function emit(index)
+    pool[index]()
+end
 
 local function create(owner)
     local Feature = createListView(owner)
@@ -31,7 +62,9 @@ local function create(owner)
         local Item = Feature.Items.add()
 
         Item.Caption = status.disable
-        Item.SubItems.text = table.concat(args, '\n')
+        Item.SubItems.text = table.concat(args, "\n")
+
+        return Item
     end
 
     Feature.Width, Feature.Height = width, height
@@ -46,13 +79,8 @@ local function create(owner)
         if not Item then
             return
         end
-        local enabled = Item.Caption == status.enable
+        emit(sender.ItemIndex + 1)
 
-        if enabled then
-            Item.Caption = status.disable
-        else
-            Item.Caption = status.enable
-        end
         sender.Selected = nil
         sender.ItemIndex = -1
     end
@@ -62,7 +90,9 @@ local function create(owner)
     end
 
     for _, value in pairs(keymap) do
-        addRow(value.hotkey, value.effect, value.description)
+        local Item = addRow(value.hotkey, value.effect, value.description)
+
+        addShortcut(Item, value.code, value.action)
     end
 
     return Feature
