@@ -6,13 +6,13 @@ return {
         height = 240,
     },
     client = {
-        steam = {
-            name = 'Game.exe',
-            offset = 0x00DAD67C,
-        },
         dlsite = {
             name = 'GamePro.exe',
             offset = 0x00DBEED4,
+        },
+        steam = {
+            name = 'Game.exe',
+            offset = 0x00DAD67C,
         },
     },
 }
