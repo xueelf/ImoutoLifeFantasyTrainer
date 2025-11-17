@@ -5,7 +5,6 @@ local feature = require("views.feature")
 local menu = require("views.menu")
 
 local font_name = "Lolita"
-local file_cover = "assets/images/card0002.jpg"
 local file_icon = "assets/imouto.ico"
 
 local function create()
@@ -16,7 +15,6 @@ local function create()
     local Feature = feature.create(Window)
     local Menu = menu.create(Window)
 
-    Cover.loadImageFromFile(file_cover)
     Window.Font.setName(font_name)
     Window.Icon.loadFromFile(file_icon)
     Window.centerScreen()
