@@ -1,5 +1,12 @@
 local function speed(enabled)
-    showMessage("speed")
+    local MainForm = getMainForm()
+
+    if enabled then
+        speedhack_setSpeed(3)
+    else
+        speedhack_setSpeed(1)
+    end
+    MainForm.cbSpeedhack.Checked = enabled
 end
 
 local function victory()

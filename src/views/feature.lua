@@ -27,11 +27,11 @@ local function addShortcut(owner, code, action)
         if not method then
             showMessage(string.format('Action "%s" is not defined', action))
         else
-            local enabled = owner.Caption == status.enable
-            local success, result = pcall(method)
+            local enabled = owner.Caption == status.disable
+            local success, result = pcall(method, enabled)
 
             if success then
-                owner.Caption = enabled and status.disable or status.enable
+                owner.Caption = enabled and status.enable or status.disable
             else
                 showMessage(result)
             end
