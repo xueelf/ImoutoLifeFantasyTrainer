@@ -2,5 +2,5 @@
 <CheatTable CheatEngineTableVersion="46">
   <CheatEntries/>
   <UserdefinedSymbols/>
-  <LuaScript>dofile("main.lua")</LuaScript>
+  <LuaScript>dofile('main.lua')</LuaScript>
 </CheatTable>

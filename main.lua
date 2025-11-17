@@ -8,6 +8,6 @@ if not endsWith(package.path, module_path) then
     package.path = package.path .. module_path
 end
 
-local app = require("app")
+local app = require('app')
 
 app.create()

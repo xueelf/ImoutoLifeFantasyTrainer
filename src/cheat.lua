@@ -10,7 +10,7 @@ local function speed(enabled)
 end
 
 local function victory()
-    error("victory")
+    error('victory')
 end
 
 return {

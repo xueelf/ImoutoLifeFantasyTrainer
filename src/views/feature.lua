@@ -1,17 +1,17 @@
-local config = require("config")
-local keymap = require("keymap")
-local cheat = require("cheat")
-local cover = require("views.cover")
+local config = require('config')
+local keymap = require('keymap')
+local cheat = require('cheat')
+local cover = require('views.cover')
 
 local header = {
-    { title = "状态", span = 45 },
-    { title = "热键", span = 45 },
-    { title = "功能", span = 140 },
-    { title = "描述", span = 170 },
+    { title = '状态', span = 45 },
+    { title = '热键', span = 45 },
+    { title = '功能', span = 140 },
+    { title = '描述', span = 170 },
 }
 local status = {
-    enable = "●",
-    disable = "○",
+    enable = '●',
+    disable = '○',
 }
 local width, height = config.window.width - cover.width, config.window.height
 
@@ -62,7 +62,7 @@ local function create(owner)
         local Item = Feature.Items.add()
 
         Item.Caption = status.disable
-        Item.SubItems.text = table.concat(args, "\n")
+        Item.SubItems.text = table.concat(args, '\n')
 
         return Item
     end

@@ -1,4 +1,4 @@
-local config = require("config")
+local config = require('config')
 
 local function create()
     local Window = createForm(false)

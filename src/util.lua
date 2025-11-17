@@ -1,4 +1,4 @@
-local ROOT = "assets/"
+local ROOT = 'assets/'
 
 local function loadFile(filename)
     local stream = createMemoryStream()
@@ -8,8 +8,8 @@ local function loadFile(filename)
 end
 
 local function loadFont(filename)
-    local base = "fonts/"
-    local extension = ".ttf"
+    local base = 'fonts/'
+    local extension = '.ttf'
     local path = base .. filename .. extension
     local stream = loadFile(path)
 
@@ -17,8 +17,8 @@ local function loadFont(filename)
 end
 
 local function playVoice(filename)
-    local base = "sounds/"
-    local extension = ".wav"
+    local base = 'sounds/'
+    local extension = '.wav'
     local path = base .. filename .. extension
     local stream = loadFile(path)
 

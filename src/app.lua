@@ -1,11 +1,11 @@
-local util = require("util")
-local window = require("views.window")
-local cover = require("views.cover")
-local feature = require("views.feature")
-local menu = require("views.menu")
+local util = require('util')
+local window = require('views.window')
+local cover = require('views.cover')
+local feature = require('views.feature')
+local menu = require('views.menu')
 
-local font_name = "Lolita"
-local file_icon = "assets/imouto.ico"
+local font_name = 'Lolita'
+local file_icon = 'assets/imouto.ico'
 
 local function create()
     util.loadFont(font_name)
@@ -20,7 +20,7 @@ local function create()
     Window.centerScreen()
     Window.show()
 
-    util.playVoice("onj001")
+    util.playVoice('onj001')
 end
 
 return {
