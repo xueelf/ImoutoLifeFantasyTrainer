@@ -15,21 +15,29 @@ local function draw()
     Background.stretch = true
     Background.proportional = true
 
-    local index = 1
     local images = getFileList(BOOTSTRAP_LOGO)
+    local index = 1
+    local timer_tick_count = 0
+    local timer_tick_max = 30
 
-    local function play()
+    local function linkStart()
         index = index + 1
+        timer_tick_count = timer_tick_count + 1
 
+        if timer_tick_count >= timer_tick_max then
+            animationTimer.destroy()
+            showMessage("哥哥喜欢放置 Play 是么？")
+            closeCE()
+        end
         if index > #images then
             index = 1
         end
         Background.loadImageFromFile(images[index])
     end
 
-    play()
+    linkStart()
     animationTimer.setInterval(1000)
-    animationTimer.setOnTimer(play)
+    animationTimer.setOnTimer(linkStart)
 end
 
 local function destroy()
