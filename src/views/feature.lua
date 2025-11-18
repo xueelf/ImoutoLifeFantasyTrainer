@@ -2,9 +2,10 @@ local cheat = require('cheat')
 local config = require('config')
 local keymap = require('keymap')
 
-Feature = createListView(Window)
+local Feature = createListView(Window)
+local Prompt = createPanel(Window)
 
-local FEATURE_WIDTH = config.window.width - Cover.width
+local FEATURE_WIDTH = 400
 local header = {
     { caption = '状态', width = 45 },
     { caption = '热键', width = 45 },
@@ -68,6 +69,12 @@ local function addRow(row)
 end
 
 local function draw()
+    Prompt.width, Prompt.height = FEATURE_WIDTH, config.window.height
+    Prompt.left = Cover.width
+    Prompt.caption = "电波传达不到哦"
+    Prompt.visible = false
+    Prompt.bevelOuter = bvSpace
+
     Feature.width, Feature.height = FEATURE_WIDTH, config.window.height
     Feature.left = Cover.width
     Feature.borderStyle = bsNone
@@ -103,11 +110,13 @@ local function reset()
 end
 
 local function show()
+    Prompt.setVisible(false)
     Feature.setVisible(true)
 end
 
 local function hidden()
     Feature.setVisible(false)
+    Prompt.setVisible(true)
     reset()
 end
 

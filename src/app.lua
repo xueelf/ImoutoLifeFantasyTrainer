@@ -78,9 +78,9 @@ end
 local function create()
     window.draw()
     menu.draw()
+    bootstrap.draw()
     cover.draw()
     feature.draw()
-    bootstrap.draw()
 
     local MainForm = getMainForm()
     local attachTimer = createTimer(MainForm)
