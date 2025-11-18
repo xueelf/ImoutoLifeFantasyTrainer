@@ -1,6 +1,7 @@
 local config = require('config')
 local util = require('util')
 local window = require('views.window')
+local bootstrap = require('views.bootstrap')
 local menu = require('views.menu')
 local cover = require('views.cover')
 local feature = require('views.feature')
@@ -57,6 +58,7 @@ local function attachTutorial(platform, pid)
     tutorial.pid = pid
 
     openProcess(pid)
+    bootstrap.destroy()
     menu.enable()
     cover.link()
     feature.show()
@@ -78,12 +80,13 @@ local function create()
     menu.draw()
     cover.draw()
     feature.draw()
+    bootstrap.draw()
 
     local MainForm = getMainForm()
-    local timer = createTimer(MainForm)
+    local attachTimer = createTimer(MainForm)
 
-    timer.setInterval(1000)
-    timer.setOnTimer(autoAttach)
+    attachTimer.setInterval(1000)
+    attachTimer.setOnTimer(autoAttach)
 
     window.show()
 end
