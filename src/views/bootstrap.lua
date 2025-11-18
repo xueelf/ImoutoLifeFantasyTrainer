@@ -3,6 +3,8 @@ local Background = createImage(Bootstrap)
 local MainForm = getMainForm()
 local animationTimer = createTimer(MainForm)
 
+local BOOTSTRAP_LOGO = 'assets/images/logo/'
+
 local function draw()
     Bootstrap.setAlign(alClient)
     Bootstrap.setBevelOuter(bvSpace)
@@ -14,7 +16,7 @@ local function draw()
     Background.proportional = true
 
     local index = 1
-    local images = getFileList('assets/images/logo/')
+    local images = getFileList(BOOTSTRAP_LOGO)
 
     local function play()
         index = index + 1

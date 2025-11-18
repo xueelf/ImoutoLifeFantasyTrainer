@@ -10,6 +10,7 @@ SeparatorMenu.caption = '-'
 -- Item
 local ItemMenu = createMenuItem(MainMenu)
 ItemMenu.caption = '道具(&I)'
+ItemMenu.enabled = false
 -- Help
 local HelpMenu = createMenuItem(MainMenu)
 HelpMenu.caption = '帮助(&H)'
@@ -135,11 +136,11 @@ local function draw()
 end
 
 local function enable()
-    ItemMenu.Enabled = true
+    ItemMenu.enabled = true
 end
 
 local function disable()
-    ItemMenu.Enabled = false
+    ItemMenu.enabled = false
 end
 
 return {
