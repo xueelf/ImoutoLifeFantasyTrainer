@@ -6,7 +6,7 @@ local function speed(enabled)
     else
         speedhack_setSpeed(1)
     end
-    MainForm.cbSpeedhack.Checked = enabled
+    MainForm.cbSpeedhack.checked = enabled
 end
 
 local function victory()

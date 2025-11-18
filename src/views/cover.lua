@@ -1,23 +1,30 @@
 local config = require('config')
+local util = require('util')
 
-local width, height = 180, config.window.height
-local file_cover = 'assets/images/card/card0002.jpg'
+Cover = createImage(Window)
 
-local function create(owner)
-    local Cover = createImage(owner)
+local COVER_WIDTH = 180
+local COVER_UNLINK = 'card0001.jpg'
 
-    local function loadImage()
-        Cover.loadImageFromFile(file_cover)
-    end
+local function draw()
+    Cover.setWidth(COVER_WIDTH)
+    Cover.setHeight(config.window.height)
+end
 
-    Cover.Width, Cover.Height = width, height
-    Cover.Left = 0
+local function loadImage(filename)
+    Cover.loadImageFromFile(filename)
+end
 
-    loadImage()
-    return Cover
+local function link()
+    loadImage(util.getRandomFileByFolder('assets/images/card', COVER_UNLINK))
+end
+
+local function unlink()
+    loadImage('assets/images/card/' .. COVER_UNLINK)
 end
 
 return {
-    width = width,
-    create = create,
+    draw = draw,
+    link = link,
+    unlink = unlink,
 }

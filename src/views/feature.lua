@@ -1,19 +1,20 @@
+local cheat = require('cheat')
 local config = require('config')
 local keymap = require('keymap')
-local cheat = require('cheat')
-local cover = require('views.cover')
 
+Feature = createListView(Window)
+
+local FEATURE_WIDTH = config.window.width - Cover.width
 local header = {
-    { title = '状态', span = 45 },
-    { title = '热键', span = 45 },
-    { title = '功能', span = 140 },
-    { title = '描述', span = 170 },
+    { caption = '状态', width = 45 },
+    { caption = '热键', width = 45 },
+    { caption = '功能', width = 140 },
+    { caption = '描述', width = 170 },
 }
 local status = {
     enable = '●',
     disable = '○',
 }
-local width, height = config.window.width - cover.width, config.window.height
 
 local pool = {}
 
@@ -27,11 +28,11 @@ local function addShortcut(owner, code, action)
         if not method then
             showMessage(string.format('Action "%s" is not defined', action))
         else
-            local enabled = owner.Caption == status.disable
+            local enabled = owner.caption == status.disable
             local success, result = pcall(method, enabled)
 
             if success then
-                owner.Caption = enabled and status.enable or status.disable
+                owner.caption = enabled and status.enable or status.disable
             else
                 showMessage(result)
             end
@@ -45,35 +46,36 @@ local function emit(index)
     pool[index]()
 end
 
-local function create(owner)
-    local Feature = createListView(owner)
+local function addCol(col)
+    local width = col.width
+    local caption = col.caption
+    local Column = Feature.Columns.add()
 
-    local function addCol(title, span)
-        local Column = Feature.Columns.add()
-
-        if span then
-            Column.Width = span
-        end
-        Column.Caption = title
+    if width then
+        Column.width = width
     end
+    Column.caption = caption
+end
 
-    local function addRow(...)
-        local args = { ... }
-        local Item = Feature.Items.add()
+local function addRow(row)
+    local text = { row.hotkey, row.effect, row.description }
+    local Item = Feature.Items.add()
 
-        Item.Caption = status.disable
-        Item.SubItems.text = table.concat(args, '\n')
+    Item.caption = status.disable
+    Item.SubItems.text = table.concat(text, '\n')
 
-        return Item
-    end
+    addShortcut(Item, row.code, row.action)
+end
 
-    Feature.Width, Feature.Height = width, height
-    Feature.Left = cover.width
-    Feature.BorderStyle = bsNone
-    Feature.ReadOnly = true
-    Feature.RowSelect = true
-    Feature.ViewStyle = vsReport
-    Feature.OnClick = function(sender)
+local function draw()
+    Feature.width, Feature.height = FEATURE_WIDTH, config.window.height
+    Feature.left = Cover.width
+    Feature.borderStyle = bsNone
+    Feature.readOnly = true
+    Feature.rowSelect = true
+    Feature.viewStyle = vsReport
+    Feature.visible = false
+    Feature.onClick = function(sender)
         local Item = sender.Selected
 
         if not Item then
@@ -85,19 +87,32 @@ local function create(owner)
         sender.ItemIndex = -1
     end
 
-    for _, value in ipairs(header) do
-        addCol(value.title, value.span)
+    for _, col in ipairs(header) do
+        addCol(col)
     end
 
-    for _, value in pairs(keymap) do
-        local Item = addRow(value.hotkey, value.effect, value.description)
-
-        addShortcut(Item, value.code, value.action)
+    for _, row in pairs(keymap) do
+        addRow(row)
     end
+end
 
-    return Feature
+local function reset()
+    for i = 0, Feature.Items.Count - 1 do
+        Feature.Items[i].caption = status.disable
+    end
+end
+
+local function show()
+    Feature.setVisible(true)
+end
+
+local function hidden()
+    Feature.setVisible(false)
+    reset()
 end
 
 return {
-    create = create,
+    draw = draw,
+    show = show,
+    hidden = hidden,
 }
