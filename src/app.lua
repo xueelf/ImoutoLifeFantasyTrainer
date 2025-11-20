@@ -46,7 +46,7 @@ local function detachTutorial(both)
 
     menu.disable()
     cover.unlink()
-    feature.hidden()
+    feature.disable()
 end
 
 local function attachTutorial(platform, pid)
@@ -61,7 +61,7 @@ local function attachTutorial(platform, pid)
     bootstrap.destroy()
     menu.enable()
     cover.link()
-    feature.show()
+    feature.enable()
     util.playVoice('onj001')
 end
 

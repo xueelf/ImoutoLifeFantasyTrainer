@@ -109,12 +109,12 @@ local function reset()
     end
 end
 
-local function show()
+local function enable()
     Prompt.setVisible(false)
     Feature.setVisible(true)
 end
 
-local function hidden()
+local function disable()
     Feature.setVisible(false)
     Prompt.setVisible(true)
     reset()
@@ -122,6 +122,6 @@ end
 
 return {
     draw = draw,
-    show = show,
-    hidden = hidden,
+    enable = enable,
+    disable = disable,
 }
