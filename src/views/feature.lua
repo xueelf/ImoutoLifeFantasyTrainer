@@ -103,25 +103,25 @@ local function draw()
     end
 end
 
-local function reset()
+local function resetStatus()
     for i = 0, Feature.Items.Count - 1 do
         Feature.Items[i].caption = status.disable
     end
 end
 
-local function enable()
+local function attach()
     Prompt.setVisible(false)
     Feature.setVisible(true)
 end
 
-local function disable()
+local function detach()
     Feature.setVisible(false)
     Prompt.setVisible(true)
-    reset()
+    resetStatus()
 end
 
 return {
     draw = draw,
-    enable = enable,
-    disable = disable,
+    attach = attach,
+    detach = detach,
 }

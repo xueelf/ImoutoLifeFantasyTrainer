@@ -68,20 +68,25 @@ local function resolvePointer(offsets)
     return pointer + offsets[#offsets]
 end
 
-local function getPointerValue(pointer)
-    local address = resolvePointer(pointer)
+local function getPointerValue(offsets)
+    local address = resolvePointer(offsets)
     local value = readInteger(address)
 
     return value
 end
 
-local function prompt(title, pointer)
-    local address = resolvePointer(pointer)
-    local current = readInteger(address)
-    local value = inputQuery(title, '请输入新的数值：', current)
+local function setPointerValue(offsets, value)
+    local address = resolvePointer(offsets)
+    writeInteger(address, value)
+end
 
-    if value ~= nil then
-        writeInteger(address, value)
+local function prompt(title, offsets)
+    local address = resolvePointer(offsets)
+    local value = readInteger(address)
+    local input = inputQuery(title, '请输入新的数值：', value)
+
+    if input ~= nil then
+        writeInteger(address, input)
     end
 end
 
@@ -92,5 +97,6 @@ return {
     playVoice = playVoice,
     getRandomFileByFolder = getRandomFileByFolder,
     getPointerValue = getPointerValue,
+    setPointerValue = setPointerValue,
     prompt = prompt,
 }

@@ -44,9 +44,9 @@ local function detachTutorial(both)
     tutorial.platform = nil
     tutorial.pid = nil
 
-    menu.disable()
-    cover.unlink()
-    feature.disable()
+    menu.detach()
+    cover.detach()
+    feature.detach()
 end
 
 local function attachTutorial(platform, pid)
@@ -59,9 +59,9 @@ local function attachTutorial(platform, pid)
 
     openProcess(pid)
     bootstrap.destroy()
-    menu.enable()
-    cover.link()
-    feature.enable()
+    menu.attach()
+    cover.attach()
+    feature.attach()
     util.playVoice('onj001')
 end
 
