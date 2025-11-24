@@ -1,4 +1,4 @@
-local cheat = require('cheat')
+local util = require('util')
 local config = require('config')
 local keymap = require('keymap')
 
@@ -17,6 +17,21 @@ local status = {
     disable = '○',
 }
 
+local handler = {
+    speed = function(enabled)
+        local MainForm = getMainForm()
+
+        if enabled then
+            speedhack_setSpeed(3)
+        else
+            speedhack_setSpeed(1)
+        end
+        MainForm.cbSpeedhack.checked = enabled
+    end,
+    victory = function()
+        error('victory')
+    end,
+}
 local pool = {}
 
 local function addShortcut(owner, code, action)
@@ -24,19 +39,26 @@ local function addShortcut(owner, code, action)
         return
     end
     local callback = function()
-        local method = cheat[action]
+        local method = handler[action]
 
         if not method then
             showMessage(string.format('Action "%s" is not defined', action))
-        else
-            local enabled = owner.caption == status.disable
-            local success, result = pcall(method, enabled)
+            return
+        end
+        local enabled = owner.caption == status.disable
+        local success, result = pcall(method, enabled)
 
-            if success then
-                owner.caption = enabled and status.enable or status.disable
-            else
-                showMessage(result)
-            end
+        if not success then
+            showMessage(result)
+            return
+        end
+
+        if enabled then
+            owner.setCaption(status.enable)
+            util.playVoice('Select')
+        else
+            owner.setCaption(status.disable)
+            util.playVoice('Cancel')
         end
     end
     createHotkey(callback, code)
@@ -71,7 +93,7 @@ end
 local function draw()
     Prompt.width, Prompt.height = FEATURE_WIDTH, config.window.height
     Prompt.left = Cover.width
-    Prompt.caption = "电波传达不到哦"
+    Prompt.caption = '电波传达不到哦'
     Prompt.visible = false
     Prompt.bevelOuter = bvSpace
 
