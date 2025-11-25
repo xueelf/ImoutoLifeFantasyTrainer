@@ -1,5 +1,5 @@
-local config = require('config')
 local util = require('util')
+local app = require('config.app')
 
 Cover = createImage(Window)
 
@@ -8,7 +8,7 @@ local COVER_DETACH_CARD = 'card0001.jpg'
 
 local function draw()
     Cover.setWidth(COVER_WIDTH)
-    Cover.setHeight(config.window.height)
+    Cover.setHeight(app.window.height)
 end
 
 local function loadImage(filename)

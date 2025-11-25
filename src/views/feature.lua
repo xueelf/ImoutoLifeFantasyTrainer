@@ -1,6 +1,6 @@
 local util = require('util')
-local config = require('config')
-local keymap = require('keymap')
+local app = require('config.app')
+local keymap = require('config.keymap')
 
 local Feature = createListView(Window)
 local Prompt = createPanel(Window)
@@ -91,13 +91,13 @@ local function addRow(row)
 end
 
 local function draw()
-    Prompt.width, Prompt.height = FEATURE_WIDTH, config.window.height
+    Prompt.width, Prompt.height = FEATURE_WIDTH, app.window.height
     Prompt.left = Cover.width
     Prompt.caption = '电波传达不到哦'
     Prompt.visible = false
     Prompt.bevelOuter = bvSpace
 
-    Feature.width, Feature.height = FEATURE_WIDTH, config.window.height
+    Feature.width, Feature.height = FEATURE_WIDTH, app.window.height
     Feature.left = Cover.width
     Feature.borderStyle = bsNone
     Feature.readOnly = true

@@ -1,5 +1,5 @@
-local config = require('config')
 local util = require('util')
+local app = require('config.app')
 local window = require('views.window')
 local bootstrap = require('views.bootstrap')
 local menu = require('views.menu')
@@ -17,9 +17,9 @@ local function getPlatform()
     local dlsite_pid, steam_pid = nil, nil
 
     for pid, name in pairs(processes) do
-        if name == config.client.dlsite.name then
+        if name == app.client.dlsite.name then
             dlsite_pid = pid
-        elseif name == config.client.steam.name then
+        elseif name == app.client.steam.name then
             steam_pid = pid
         end
     end

@@ -26,7 +26,7 @@ local function draw()
 
         if timer_tick_count >= timer_tick_max then
             animationTimer.destroy()
-            showMessage("哥哥喜欢放置 Play 是么？")
+            showMessage('哥哥喜欢放置 Play 是么？')
             closeCE()
         end
         if index > #images then

@@ -1,19 +1,6 @@
-local config = require('config')
+local app = require('config.app')
 
 local ROOT = 'assets/'
-
-local function isArray(list)
-    return type(list) == 'table' and #list
-end
-
-local function includes(list, value)
-    for _, item in ipairs(list) do
-        if item == value then
-            return true
-        end
-    end
-    return false
-end
 
 local function loadFile(filename)
     local stream = createMemoryStream()
@@ -57,9 +44,9 @@ local function getRandomFileByFolder(path, exclude)
 end
 
 local function resolvePointer(offsets)
-    local name = config.client[tutorial.platform].name
-    local offset = config.client[tutorial.platform].offset
-    local address = getAddress(name .. "+" .. string.format("%X", offset))
+    local name = app.client[tutorial.platform].name
+    local offset = app.client[tutorial.platform].offset
+    local address = getAddress(name .. '+' .. string.format('%X', offset))
     local pointer = readPointer(address)
 
     for i = 1, #offsets - 1 do
@@ -91,8 +78,6 @@ local function prompt(title, offsets)
 end
 
 return {
-    isArray = isArray,
-    includes = includes,
     loadFont = loadFont,
     playVoice = playVoice,
     getRandomFileByFolder = getRandomFileByFolder,

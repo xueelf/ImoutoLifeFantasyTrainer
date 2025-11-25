@@ -33,4 +33,12 @@ return {
         },
         -- clothes = {},
     },
+    status = {
+        time = {
+            day = { 0, 0x280 },
+            hour = { 0, 0x10 },
+            minute = { 0, 0x14 },
+            week = { 0, 0x18 },
+        },
+    },
 }

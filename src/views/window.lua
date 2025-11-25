@@ -1,5 +1,5 @@
-local config = require('config')
 local util = require('util')
+local app = require('config.app')
 
 Window = createForm(false)
 
@@ -9,9 +9,9 @@ local WINDOW_ICON = 'assets/imouto.ico'
 local function draw()
     util.loadFont(WINDOW_FONT)
 
-    Window.setCaption(config.window.title)
-    Window.setWidth(config.window.width)
-    Window.setHeight(config.window.height)
+    Window.setCaption(app.window.title)
+    Window.setWidth(app.window.width)
+    Window.setHeight(app.window.height)
     Window.setColor(clWhite)
     Window.setOnClose(closeCE)
     Window.Font.setName(WINDOW_FONT)
