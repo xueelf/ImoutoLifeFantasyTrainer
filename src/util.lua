@@ -75,6 +75,7 @@ local function prompt(title, offsets)
     if input ~= nil then
         writeInteger(address, input)
     end
+    return input
 end
 
 return {

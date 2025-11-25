@@ -13,11 +13,23 @@ Copyright © 2025 by Yuki<admin@yuki.sh>]], app.version)
 local DOCUMENTATION_URL = 'https://blog.yuki.sh/posts/05064242ec86/'
 
 local function prompt(title, offsets)
-    util.prompt(title, offsets)
+    local input = util.prompt(title, offsets)
+
+    if input ~= nil then
+        util.playVoice('Enter')
+    else
+        util.playVoice('Cancel')
+    end
 end
 
 local function check(offsets, checked)
-    util.setPointerValue(offsets, checked and 1 or 0)
+    if checked then
+        util.setPointerValue(offsets, 1)
+        util.playVoice('Enter')
+    else
+        util.setPointerValue(offsets, 0)
+        util.playVoice('Cancel')
+    end
 end
 
 local handler = {
@@ -80,16 +92,6 @@ local function createMenu(owner, list, ref)
             elseif value.type == 'check' then
                 MenuItem.autoCheck = true
                 MenuItem.onClick = function() check(offsets, MenuItem.checked) end
-            elseif value.type == 'select' then
-                for _, option in ipairs(value.options) do
-                    local OptionItem = createMenuItem(option)
-
-                    OptionItem.setCaption(option.caption)
-                    OptionItem.onClick = function(sender)
-                        -- select(offsets, sender.caption)
-                    end
-                    MenuItem.add(OptionItem)
-                end
             end
         end
         createMenu(MenuItem, value, ref[value.key] or {})
