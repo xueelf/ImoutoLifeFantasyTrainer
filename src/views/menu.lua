@@ -1,202 +1,115 @@
-local config = require('config')
-local pointer = require('pointer')
 local util = require('util')
+local app = require('config.app')
+local menu = require('config.menu')
+local pointer = require('config.pointer')
 
-local MainMenu = createMainMenu(Window)
-local SeparatorMenu = createMenuItem(MainMenu)
-local ItemMenu = createMenuItem(MainMenu)
-local HelpMenu = createMenuItem(MainMenu)
+local Menu = createMainMenu(Window)
+local SeparatorMenu = createMenuItem(Menu)
 
 local ABOUT_TEXT = string.format([[Version %s
 
 Powered by Cheat Engine
-Copyright © 2025 by Yuki<admin@yuki.sh>]], config.version)
+Copyright © 2025 by Yuki<admin@yuki.sh>]], app.version)
 local DOCUMENTATION_URL = 'https://blog.yuki.sh/posts/05064242ec86/'
 
-local category_list = {
-    'drinks',
-    'presents',
-    'books',
-    'household_items',
-    'sex_items',
-}
-local prop_list = {
-    drinks = {
-        'green_tea',
-        'coffee',
-        'black_tea',
-        'sleep_tea',
-        'stimulant',
-        'love_potion',
-        'after_pill',
-    },
-    presents = {
-        'sweets',
-        'present',
-    },
-    books = {
-        'adventure_book',
-        'naughty_book',
-        'doujinshi',
-    },
-    household_items = {
-        'soft_pillow',
-        'feather_mattress',
-        'dumbbell',
-        'iron_sandals',
-    },
-    sex_items = {
-        'condom',
-        'vibrator',
-        'dildo',
-        'anal_dildo',
-    },
-}
-local category_text_map = {
-    drinks = '茶水类(&D)',
-    presents = '礼物类(&P)',
-    books = '书籍类(&B)',
-    household_items = '家具类(&H)',
-    sex_items = 'H类(&S)',
-}
-local item_text_map = {
-    green_tea = '绿茶',
-    coffee = '咖啡',
-    black_tea = '红茶',
-    sleep_tea = '安眠茶',
-    stimulant = '壮阳茶',
-    love_potion = '媚药',
-    after_pill = '避孕药',
-
-    sweets = '零食',
-    present = '礼物',
-
-    adventure_book = '冒险的书',
-    naughty_book = '色色的书',
-    doujinshi = '小薄本',
-
-    soft_pillow = '安眠枕',
-    feather_mattress = '羽毛被',
-    dumbbell = '哑铃',
-    iron_sandals = '铁木屐',
-
-    condom = '安全套',
-    vibrator = '跳蛋',
-    dildo = '按摩棒',
-    anal_dildo = '菊穴按摩棒',
-}
-local prompt_item_list = {
-    'green_tea',
-    'coffee',
-    'black_tea',
-    'sleep_tea',
-    'stimulant',
-    'love_potion',
-    'after_pill',
-    'sweets',
-    'present',
-    'adventure_book',
-    'naughty_book',
-    'doujinshi',
-    'condom',
-}
-
-local function createPromptMenuItem(owner, key, offsets)
-    local text = item_text_map[key]
-    local Item = createMenuItem(owner)
-
-    Item.caption = text
-    Item.onClick = function()
-        util.prompt(text, offsets)
-    end
-    owner.add(Item)
+local function prompt(title, offsets)
+    util.prompt(title, offsets)
 end
 
-local function createCheckMenuItem(owner, key, offsets)
-    local text = item_text_map[key]
-    local Item = createMenuItem(owner)
-
-    Item.autoCheck = true
-    Item.caption = text
-    Item.onClick = function()
-        util.setPointerValue(offsets, Item.checked and 1 or 0)
-    end
-    owner.add(Item)
+local function check(offsets, checked)
+    util.setPointerValue(offsets, checked and 1 or 0)
 end
 
-local function updateItemCount(sender)
-    for category_index, category in ipairs(category_list) do
-        local CategoryItem = sender.Item[category_index - 1]
+local handler = {
+    documentation = function()
+        shellExecute(DOCUMENTATION_URL)
+    end,
+    about = function()
+        showMessage(ABOUT_TEXT)
+    end,
+}
 
-        for prop_index, prop in ipairs(prop_list[category]) do
-            local PropItem = CategoryItem.Item[prop_index - 1]
-            local offsets = pointer.item_list[category][prop]
-            local prop_text = item_text_map[prop]
-            local prop_count = util.getPointerValue(offsets)
+local function updateMenuStatus(sender, list)
+    for category_index, category in ipairs(list) do
+        local Category = sender.Item[category_index - 1]
 
-            if (util.includes(prompt_item_list, prop)) then
-                PropItem.caption = prop_text .. '\tx' .. prop_count
-            else
-                PropItem.checked = prop_count > 0
+        for prop_index, prop in ipairs(category) do
+            if prop.type == 'action' then
+                break
+            end
+            local Prop = Category.Item[prop_index - 1]
+            local offsets = pointer[list.key][category.key][prop.key]
+            local count = util.getPointerValue(offsets)
+
+            if prop.type == 'prompt' then
+                local format = category.format or prop.format or count
+                Prop.caption = prop.caption .. '\t' .. string.gsub(format, '{}', count)
+            elseif prop.type == 'check' then
+                Prop.checked = count > 0
             end
         end
     end
 end
 
-local function createItemMenu()
-    ItemMenu.caption = '道具(&I)'
-    ItemMenu.enabled = false
-    ItemMenu.onClick = updateItemCount
+local function createMenu(owner, list, ref)
+    local is_main = owner.className == 'TMainMenu'
 
-    for _, category in ipairs(category_list) do
-        local category_text = category_text_map[category]
-        local CategoryItem = createMenuItem(ItemMenu)
+    for _, value in ipairs(list) do
+        local MenuItem = createMenuItem(value)
 
-        CategoryItem.setCaption(category_text)
+        MenuItem.setCaption(value.caption)
 
-        for _, prop in ipairs(prop_list[category]) do
-            local offsets = pointer.item_list[category][prop]
+        if is_main then
+            owner.Items.add(MenuItem)
 
-            if (util.includes(prompt_item_list, prop)) then
-                createPromptMenuItem(CategoryItem, prop, offsets)
-            else
-                createCheckMenuItem(CategoryItem, prop, offsets)
+            MenuItem.enabled = value.enabled
+            MenuItem.onClick = function(sender)
+                updateMenuStatus(sender, value)
+            end
+        else
+            owner.add(MenuItem)
+        end
+
+        if value.type and ref then
+            local offsets = ref[value.key]
+
+            if value.type == 'action' then
+                MenuItem.onClick = handler[value.key]
+            elseif value.type == 'prompt' then
+                MenuItem.onClick = function() prompt(value.caption, offsets) end
+            elseif value.type == 'check' then
+                MenuItem.autoCheck = true
+                MenuItem.onClick = function() check(offsets, MenuItem.checked) end
+            elseif value.type == 'select' then
+                for _, option in ipairs(value.options) do
+                    local OptionItem = createMenuItem(option)
+
+                    OptionItem.setCaption(option.caption)
+                    OptionItem.onClick = function(sender)
+                        -- select(offsets, sender.caption)
+                    end
+                    MenuItem.add(OptionItem)
+                end
             end
         end
-        ItemMenu.add(CategoryItem)
+        createMenu(MenuItem, value, ref[value.key] or {})
     end
-    MainMenu.Items.add(ItemMenu)
-end
-
-local function createHelpMenu()
-    local DocumentationMenu = createMenuItem(MenuHelp)
-    local AboutMenu = createMenuItem(MenuHelp)
-
-    HelpMenu.caption = '帮助(&H)'
-    DocumentationMenu.caption = '文档(&D)'
-    AboutMenu.caption = '关于(&A)'
-
-    DocumentationMenu.onClick = function() shellExecute(DOCUMENTATION_URL) end
-    AboutMenu.onClick = function() showMessage(ABOUT_TEXT) end
-
-    HelpMenu.add(DocumentationMenu)
-    HelpMenu.add(SeparatorMenu)
-    HelpMenu.add(AboutMenu)
-    MainMenu.Items.add(HelpMenu)
 end
 
 local function draw()
-    SeparatorMenu.setCaption('-')
-    createItemMenu()
-    createHelpMenu()
+    createMenu(Menu, menu, pointer)
 end
 
 local function attach()
-    ItemMenu.enabled = true
+    for index = 0, Menu.Items.count - 1 do
+        Menu.Items[index].enabled = true
+    end
 end
 
 local function detach()
-    ItemMenu.enabled = false
+    for index = 0, Menu.Items.count - 1 do
+        Menu.Items[index].enabled = menu[index + 1].enabled
+    end
 end
 
 return {
