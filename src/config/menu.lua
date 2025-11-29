@@ -57,7 +57,20 @@ return {
             [1] = { caption = '日', key = 'day', type = 'prompt' },
             [2] = { caption = '时', key = 'hour', type = 'prompt' },
             [3] = { caption = '分', key = 'minute', type = 'prompt' },
-            [4] = { caption = '周', key = 'week', type = 'prompt' },
+            [4] = {
+                caption = '周',
+                key = 'week',
+                type = 'select',
+                options = {
+                    { caption = '周一', value = 0 },
+                    { caption = '周二', value = 1 },
+                    { caption = '周三', value = 2 },
+                    { caption = '周四', value = 3 },
+                    { caption = '周五', value = 4 },
+                    { caption = '周六', value = 5 },
+                    { caption = '周日', value = 6 },
+                }
+            },
         },
     },
     {

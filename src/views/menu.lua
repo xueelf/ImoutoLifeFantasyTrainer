@@ -58,6 +58,10 @@ local function updateMenuStatus(sender, list)
                 Prop.caption = prop.caption .. '\t' .. string.gsub(format, '{}', count)
             elseif prop.type == 'check' then
                 Prop.checked = count > 0
+            elseif prop.type == 'select' then
+                for i = 0, Prop.count - 1 do
+                    Prop.Item[i].checked = prop.options[i + 1].value == count
+                end
             end
         end
     end
@@ -92,6 +96,21 @@ local function createMenu(owner, list, ref)
             elseif value.type == 'check' then
                 MenuItem.autoCheck = true
                 MenuItem.onClick = function() check(offsets, MenuItem.checked) end
+            elseif value.type == 'select' then
+                for _, option in ipairs(value.options) do
+                    local OptionItem = createMenuItem(option)
+
+                    OptionItem.setCaption(option.caption)
+                    OptionItem.onClick = function()
+                        for i = 0, MenuItem.count - 1 do
+                            MenuItem.Item[i].checked = false
+                        end
+                        OptionItem.checked = true
+                        util.setPointerValue(offsets, option.value)
+                        util.playVoice('Enter')
+                    end
+                    MenuItem.add(OptionItem)
+                end
             end
         end
         createMenu(MenuItem, value, ref[value.key] or {})
