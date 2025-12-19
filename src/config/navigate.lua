@@ -72,6 +72,30 @@ return {
                 }
             },
         },
+        [2] = {
+            caption = '方针(&P)',
+            key = 'household_policy',
+            type = 'select',
+            options = {
+                { caption = '开始之时', value = 1, readonly = true },
+                { caption = '往常的生活', value = 2 },
+                { caption = '打工生活', value = 3 },
+                { caption = '便当生活', value = 4 },
+                { caption = '节约生活', value = 5 },
+                { caption = '读书周', value = 6 },
+                { caption = '肉体改造', value = 7 },
+                { caption = '大人的阶段', value = 8 },
+                { caption = '健康的每一天', value = 9 },
+                { caption = '奢侈期', value = 10 },
+                { caption = '禁欲生活', value = 11 },
+                { caption = '糜烂生活', value = 12 },
+                { caption = '烦恼全开', value = 13 },
+                { caption = '妹妹生活', value = 14 },
+                { caption = '暑假！', value = 15, readonly = true },
+                { caption = '合宿！', value = 16, readonly = true },
+                { caption = '妹妹旅行', value = 17 },
+            }
+        }
     },
     {
         caption = '帮助(&H)',
