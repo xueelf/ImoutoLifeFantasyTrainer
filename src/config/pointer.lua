@@ -40,5 +40,6 @@ return {
             minute = { 0, 0x14 },
             week = { 0, 0x18 },
         },
+        household_policy = { 0, 0x274 }
     },
 }
