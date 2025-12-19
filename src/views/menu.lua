@@ -1,6 +1,6 @@
 local util = require('util')
 local app = require('config.app')
-local menu = require('config.menu')
+local navigate = require('config.navigate')
 local pointer = require('config.pointer')
 
 local Menu = createMainMenu(Window)
@@ -41,26 +41,28 @@ local handler = {
     end,
 }
 
-local function updateMenuStatus(sender, list)
-    for category_index, category in ipairs(list) do
-        local Category = sender.Item[category_index - 1]
+local function syncMenuStatus(sender, list, ref)
+    for i = 0, sender.count - 1 do
+        local MenuItem = sender.Item[i]
+        local nav = list[i + 1]
 
-        for prop_index, prop in ipairs(category) do
-            if prop.type == 'action' then
+        if #nav > 0 then
+            syncMenuStatus(MenuItem, nav, ref[nav.key])
+        else
+            if nav.type == 'action' then
                 break
             end
-            local Prop = Category.Item[prop_index - 1]
-            local offsets = pointer[list.key][category.key][prop.key]
+            local offsets = ref[nav.key]
             local count = util.getPointerValue(offsets)
 
-            if prop.type == 'prompt' then
-                local format = category.format or prop.format or count
-                Prop.caption = prop.caption .. '\t' .. string.gsub(format, '{}', count)
-            elseif prop.type == 'check' then
-                Prop.checked = count > 0
-            elseif prop.type == 'select' then
-                for i = 0, Prop.count - 1 do
-                    Prop.Item[i].checked = prop.options[i + 1].value == count
+            if nav.type == 'prompt' then
+                local format = nav.format or count
+                MenuItem.caption = nav.caption .. '\t' .. string.gsub(format, '{}', count)
+            elseif nav.type == 'check' then
+                MenuItem.checked = count > 0
+            elseif nav.type == 'select' then
+                for j = 0, MenuItem.count - 1 do
+                    MenuItem.Item[j].checked = nav.options[j + 1].value == count
                 end
             end
         end
@@ -80,7 +82,7 @@ local function createMenu(owner, list, ref)
 
             MenuItem.enabled = value.enabled
             MenuItem.onClick = function(sender)
-                updateMenuStatus(sender, value)
+                syncMenuStatus(sender, value, ref[value.key])
             end
         else
             owner.add(MenuItem)
@@ -100,6 +102,9 @@ local function createMenu(owner, list, ref)
                 for _, option in ipairs(value.options) do
                     local OptionItem = createMenuItem(option)
 
+                    if option.readonly then
+                        OptionItem.enabled = false
+                    end
                     OptionItem.setCaption(option.caption)
                     OptionItem.onClick = function()
                         for i = 0, MenuItem.count - 1 do
@@ -118,7 +123,7 @@ local function createMenu(owner, list, ref)
 end
 
 local function draw()
-    createMenu(Menu, menu, pointer)
+    createMenu(Menu, navigate, pointer)
 end
 
 local function attach()
@@ -129,7 +134,7 @@ end
 
 local function detach()
     for index = 0, Menu.Items.count - 1 do
-        Menu.Items[index].enabled = menu[index + 1].enabled
+        Menu.Items[index].enabled = navigate[index + 1].enabled
     end
 end
 
