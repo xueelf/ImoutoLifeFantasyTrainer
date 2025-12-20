@@ -1,7 +1,9 @@
 local util = require('util')
 local app = require('config.app')
 local keymap = require('config.keymap')
+local pointer = require('config.pointer')
 
+local MainForm = getMainForm()
 local Feature = createListView(Window)
 local Prompt = createPanel(Window)
 
@@ -17,10 +19,45 @@ local status = {
     disable = '○',
 }
 
+local function createObserver()
+    local subscriptions = {}
+    local timer = createTimer(MainForm)
+
+    timer.setInterval(1000)
+    timer.setOnTimer(function()
+        for _, subscription in ipairs(subscriptions) do
+            util.setPointerValue(subscription.offsets, subscription.value or subscription.default)
+        end
+    end)
+
+    return {
+        observe = function(offsets, value)
+            table.insert(subscriptions, {
+                offsets = offsets,
+                value = value,
+                default = util.getPointerValue(offsets),
+            })
+        end,
+        unobserve = function(offsets)
+            for index, subscription in ipairs(subscriptions) do
+                if subscription.offsets == offsets then
+                    table.remove(subscriptions, index)
+                    util.setPointerValue(subscription.offsets, subscription.default)
+
+                    return
+                end
+            end
+        end,
+        disconnect = function()
+            subscriptions = {}
+        end,
+    }
+end
+
+local observer = createObserver()
+
 local handler = {
     speed = function(enabled)
-        local MainForm = getMainForm()
-
         if enabled then
             speedhack_setSpeed(3)
         else
@@ -28,8 +65,37 @@ local handler = {
         end
         MainForm.cbSpeedhack.checked = enabled
     end,
-    victory = function()
-        error('victory')
+    winer = function(enabled)
+        if enabled then
+            observer.observe(pointer.battle.winner, 1)
+        else
+            observer.unobserve(pointer.battle.winner)
+        end
+    end,
+    chronostasis = function(enabled)
+        if enabled then
+            observer.observe(pointer.status.time.hour)
+            observer.observe(pointer.status.time.minute)
+            observer.observe(pointer.status.time.week)
+        else
+            observer.unobserve(pointer.status.time.hour)
+            observer.unobserve(pointer.status.time.minute)
+            observer.unobserve(pointer.status.time.week)
+        end
+    end,
+    ablutomania = function(enabled)
+        if enabled then
+            observer.observe(pointer.status.took_bath, 0)
+        else
+            observer.unobserve(pointer.status.took_bath)
+        end
+    end,
+    teaaholic = function(enabled)
+        if enabled then
+            observer.observe(pointer.status.had_tea, 0)
+        else
+            observer.unobserve(pointer.status.had_tea)
+        end
     end,
 }
 local pool = {}
@@ -129,6 +195,7 @@ local function resetStatus()
     for i = 0, Feature.Items.Count - 1 do
         Feature.Items[i].caption = status.disable
     end
+    observer.disconnect()
 end
 
 local function attach()

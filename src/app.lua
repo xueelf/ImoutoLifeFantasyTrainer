@@ -40,6 +40,8 @@ local function detachTutorial(both)
     if not tutorial.attached then
         return
     end
+    -- TODO 双平台彩蛋
+
     tutorial.attached = false
     tutorial.platform = nil
     tutorial.pid = nil

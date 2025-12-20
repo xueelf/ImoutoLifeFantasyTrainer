@@ -1,4 +1,8 @@
 return {
+    battle = {
+        battle_start = { 0, 0x550 },
+        winner = { 0, 0x55C },
+    },
     item_list = {
         drinks = {
             green_tea = { 0, 0x168 },
