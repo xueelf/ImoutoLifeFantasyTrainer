@@ -45,6 +45,7 @@ return {
             [2] = { caption = '跳蛋', key = 'vibrator', type = 'check' },
             [3] = { caption = '按摩棒', key = 'dildo', type = 'check' },
             [4] = { caption = '菊穴按摩棒', key = 'anal_dildo', type = 'check' },
+            [5] = { caption = '触手', key = 'tentacle', type = 'check' },
         },
     },
     {

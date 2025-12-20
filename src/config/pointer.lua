@@ -29,6 +29,7 @@ return {
             vibrator = { 0, 0x474 },
             dildo = { 0, 0x478 },
             anal_dildo = { 0, 0x47C },
+            tentacle = { 0, 0x480 },
         },
         -- clothes = {},
     },
