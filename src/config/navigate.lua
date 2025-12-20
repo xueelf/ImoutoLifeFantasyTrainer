@@ -95,12 +95,13 @@ return {
                 { caption = '合宿！', value = 16, readonly = true },
                 { caption = '妹妹旅行', value = 17 },
             }
-        }
+        },
     },
     {
         caption = '帮助(&H)',
         enabled = true,
         [1] = { caption = '文档(&D)', key = 'documentation', type = 'action' },
-        [2] = { caption = '关于(&A)', key = 'about', type = 'action' },
+        [2] = { caption = '代码仓库(&R)', key = 'repository', type = 'action' },
+        [3] = { caption = '关于(&A)', key = 'about', type = 'action' },
     },
 }

@@ -11,6 +11,7 @@ local ABOUT_TEXT = string.format([[Version %s
 Powered by Cheat Engine
 Copyright © 2025 by Yuki<admin@yuki.sh>]], app.version)
 local DOCUMENTATION_URL = 'https://blog.yuki.sh/posts/05064242ec86/'
+local REPOSITORY_URL = 'https://github.com/xueelf/ImoutoLifeFantasyTrainer/'
 
 local function prompt(title, offsets)
     local input = util.prompt(title, offsets)
@@ -35,6 +36,9 @@ end
 local handler = {
     documentation = function()
         shellExecute(DOCUMENTATION_URL)
+    end,
+    repository = function()
+        shellExecute(REPOSITORY_URL)
     end,
     about = function()
         showMessage(ABOUT_TEXT)
@@ -85,6 +89,9 @@ local function createMenu(owner, list, ref)
                 syncMenuStatus(sender, value, ref[value.key])
             end
         else
+            if value.readonly then
+                MenuItem.enabled = false
+            end
             owner.add(MenuItem)
         end
 
