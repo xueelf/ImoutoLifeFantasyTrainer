@@ -44,8 +44,8 @@ local function getRandomFileByFolder(path, exclude)
 end
 
 local function resolvePointer(offsets)
-    local name = app.client[tutorial.platform].name
-    local offset = app.client[tutorial.platform].offset
+    local name = app.client[trainer.platform].name
+    local offset = app.client[trainer.platform].offset
     local address = getAddress(name .. '+' .. string.format('%X', offset))
     local pointer = readPointer(address)
 

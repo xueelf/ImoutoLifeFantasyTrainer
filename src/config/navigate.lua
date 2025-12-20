@@ -131,7 +131,7 @@ return {
         caption = '帮助(&H)',
         enabled = true,
         [1] = { caption = '文档(&D)', key = 'documentation', type = 'action' },
-        [2] = { caption = '代码仓库(&R)', key = 'repository', type = 'action' },
+        [2] = { caption = '源码(&S)', key = 'repository', type = 'action' },
         [3] = { caption = '关于(&A)', key = 'about', type = 'action' },
     },
 }

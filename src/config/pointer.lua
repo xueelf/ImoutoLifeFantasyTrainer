@@ -2,6 +2,7 @@ return {
     battle = {
         battle_start = { 0, 0x550 },
         winner = { 0, 0x55C },
+        battle_score = { 0, 0x74 },
     },
     item_list = {
         drinks = {
@@ -35,7 +36,9 @@ return {
             anal_dildo = { 0, 0x47C },
             tentacle = { 0, 0x480 },
         },
+        -- 衣服
         -- clothes = {},
+        -- 胖次
     },
     status = {
         time = {

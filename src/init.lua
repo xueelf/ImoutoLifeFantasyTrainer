@@ -1,3 +1,16 @@
+local MODULE_PATH = [[;.\src\?.lua]]
+
+function isTrainer()
+    return getApplication().ExeName:find('cheatengine')
+end
+
+if isTrainer() then
+    -- 修正 .ct 调用 lua 时的模块 pwd 问题
+    if not string.endsWith(package.path, MODULE_PATH) then
+        package.path = package.path .. MODULE_PATH
+    end
+end
+
 local util = require('util')
 local app = require('config.app')
 local window = require('views.window')
@@ -6,7 +19,7 @@ local menu = require('views.menu')
 local cover = require('views.cover')
 local feature = require('views.feature')
 
-tutorial = {
+trainer = {
     attached = false,
     platform = nil,
     pid = nil,
@@ -36,28 +49,28 @@ local function getPlatform()
     end
 end
 
-local function detachTutorial(both)
-    if not tutorial.attached then
+local function detachTrainer(both)
+    if not trainer.attached then
         return
     end
-    -- TODO 双平台彩蛋
+    -- TODO 双平台客户端同时启动的彩蛋
 
-    tutorial.attached = false
-    tutorial.platform = nil
-    tutorial.pid = nil
+    trainer.attached = false
+    trainer.platform = nil
+    trainer.pid = nil
 
     menu.detach()
     cover.detach()
     feature.detach()
 end
 
-local function attachTutorial(platform, pid)
-    if tutorial.attached and tutorial.pid == pid then
+local function attachTrainer(platform, pid)
+    if trainer.attached and trainer.pid == pid then
         return
     end
-    tutorial.attached = true
-    tutorial.platform = platform
-    tutorial.pid = pid
+    trainer.attached = true
+    trainer.platform = platform
+    trainer.pid = pid
 
     openProcess(pid)
     bootstrap.destroy()
@@ -71,9 +84,9 @@ local function autoAttach()
     local platform, target_pid, both = getPlatform()
 
     if not target_pid then
-        detachTutorial(both)
+        detachTrainer(both)
     else
-        attachTutorial(platform, target_pid)
+        attachTrainer(platform, target_pid)
     end
 end
 
@@ -93,6 +106,4 @@ local function create()
     window.show()
 end
 
-return {
-    create = create,
-}
+create()

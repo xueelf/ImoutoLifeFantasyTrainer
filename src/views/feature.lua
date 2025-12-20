@@ -26,7 +26,9 @@ local function createObserver()
     timer.setInterval(1000)
     timer.setOnTimer(function()
         for _, subscription in ipairs(subscriptions) do
-            util.setPointerValue(subscription.offsets, subscription.value or subscription.default)
+            pcall(function()
+                util.setPointerValue(subscription.offsets, subscription.value or subscription.default)
+            end)
         end
     end)
 
@@ -57,6 +59,20 @@ end
 local observer = createObserver()
 
 local handler = {
+    winer = function(enabled)
+        if enabled then
+            observer.observe(pointer.battle.winner, 1)
+        else
+            observer.unobserve(pointer.battle.winner)
+        end
+    end,
+    invincibility = function(enabled)
+        if enabled then
+            observer.observe(pointer.battle.battle_score, 114514)
+        else
+            observer.unobserve(pointer.battle.battle_score)
+        end
+    end,
     speed = function(enabled)
         if enabled then
             speedhack_setSpeed(3)
@@ -64,13 +80,6 @@ local handler = {
             speedhack_setSpeed(1)
         end
         MainForm.cbSpeedhack.checked = enabled
-    end,
-    winer = function(enabled)
-        if enabled then
-            observer.observe(pointer.battle.winner, 1)
-        else
-            observer.unobserve(pointer.battle.winner)
-        end
     end,
     chronostasis = function(enabled)
         if enabled then
@@ -105,6 +114,9 @@ local function addShortcut(owner, code, action)
         return
     end
     local callback = function()
+        if not trainer.attached then
+            return
+        end
         local method = handler[action]
 
         if not method then
