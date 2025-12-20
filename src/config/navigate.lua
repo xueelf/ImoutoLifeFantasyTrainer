@@ -96,6 +96,35 @@ return {
                 { caption = '妹妹旅行', value = 17 },
             }
         },
+        [3] = {
+            caption = '妹妹(&I)',
+            key = 'imouto',
+            [1] = {
+                caption = '心情',
+                key = 'interest',
+                type = 'select',
+                options = {
+                    { caption = '哥哥LOVE', value = 10 },
+                    { caption = '很开心', value = 8 },
+                    { caption = '普通', value = 6 },
+                    { caption = '不开心', value = 4 },
+                    { caption = '即将爆炸', value = 2 },
+                    { caption = '爆炸', value = 0 },
+                }
+            },
+            [2] = { caption = '信赖', key = 'trust', type = 'prompt' },
+            [3] = { caption = '性趣', key = 'mood', type = 'prompt' },
+            [4] = { caption = '性欲', key = 'lust', type = 'prompt' },
+            [5] = { caption = '健康', key = 'condition', type = 'prompt', readonly = true },
+        },
+        [4] = {
+            caption = '哥哥(&O)',
+            key = 'oniichan',
+            [1] = { caption = '行动力', key = 'energy', type = 'prompt' },
+            [2] = { caption = '性欲', key = 'lust', type = 'prompt' },
+            [3] = { caption = '精力', key = 'stamina', type = 'prompt' },
+            [4] = { caption = '金钱', key = 'money', type = 'prompt' },
+        },
     },
     {
         caption = '帮助(&H)',

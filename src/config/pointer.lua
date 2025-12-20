@@ -29,7 +29,6 @@ return {
             vibrator = { 0, 0x474 },
             dildo = { 0, 0x478 },
             anal_dildo = { 0, 0x47C },
-            -- tentacle = { 0, 0x480 },
         },
         -- clothes = {},
     },
@@ -40,6 +39,22 @@ return {
             minute = { 0, 0x14 },
             week = { 0, 0x18 },
         },
-        household_policy = { 0, 0x274 }
+        household_policy = { 0, 0x274 },
+        imouto = {
+            trust = { 0, 0x54 },
+            interest = { 0, 0x5C },
+            mood = { 0, 0x58 },
+            lust = { 0, 0x198 },
+            condition = { 0, 0x50 },
+        },
+        oniichan = {
+            energy = { 0, 0x38 },
+            lust = { 0, 0x48 },
+            stamina = { 0, 0x40 },
+            money = { 0, 0x1C },
+        },
+
+        took_bath = { 0, 0x118 },
+        had_tea = { 0, 0x124 },
     },
 }
