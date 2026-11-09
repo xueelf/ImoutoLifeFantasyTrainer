@@ -1080,5 +1080,4 @@
   </CheatEntries>
 
   <UserdefinedSymbols/>
-  <LuaScript>dofile('src/init.lua')</LuaScript>
 </CheatTable>
