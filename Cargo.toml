@@ -1,0 +1,19 @@
+[workspace]
+members = ["crates/*"]
+default-members = ["crates/trainer"]
+resolver = "3"
+
+[workspace.package]
+version = "2.0.0"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT"
+repository = "https://github.com/xueelf/ImoutoLifeFantasyTrainer"
+publish = false
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
