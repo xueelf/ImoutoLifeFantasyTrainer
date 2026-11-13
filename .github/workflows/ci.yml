@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      CARGO_TARGET_I686_PC_WINDOWS_GNU_LINKER: i686-w64-mingw32-gcc-posix
+      WINDRES: i686-w64-mingw32-windres
+      WINDRES_PREPROCESSOR: i686-w64-mingw32-cpp-posix
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: i686-pc-windows-gnu
+          components: rustfmt, clippy
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Install MinGW-w64
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-i686 binutils-mingw-w64-i686
+
+      - name: Build speedhack DLL
+        run: |
+          cargo build --locked -p imouto-speedhack --release --target i686-pc-windows-gnu
+
+      - name: Clippy
+        run: cargo clippy --locked --workspace --target i686-pc-windows-gnu --all-targets -- -D warnings
+
+      - name: Build trainer
+        run: cargo build --locked -p imouto-life-fantasy-trainer --release --target i686-pc-windows-gnu
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ImoutoLifeFantasyTrainer
+          path: target/i686-pc-windows-gnu/release/ImoutoLifeFantasyTrainer.exe
+          if-no-files-found: error
+
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: i686-pc-windows-gnu
+
+      - uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: MINGW32
+          install: mingw-w64-i686-gcc
+
+      - name: Configure MinGW
+        run: |
+          $msys = '${{ steps.msys2.outputs.msys2-location }}'
+          $mingw = Join-Path $msys 'mingw32\bin'
+          $mingw | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "CARGO_TARGET_I686_PC_WINDOWS_GNU_LINKER=$mingw\gcc.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "WINDRES=$mingw\windres.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "WINDRES_PREPROCESSOR=$mingw\cpp.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build speedhack DLL
+        run: |
+          cargo build --locked -p imouto-speedhack --target i686-pc-windows-gnu
+
+      - name: Test
+        run: cargo test --locked --workspace --target i686-pc-windows-gnu
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ImoutoLifeFantasyTrainer
+          path: dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ImoutoLifeFantasyTrainer.exe
+          fail_on_unmatched_files: true
+          generate_release_notes: true
