@@ -40,10 +40,6 @@ pub(super) fn draw_items(
         if index + 1 < ItemGroup::ALL.len() {
             theme::list_separator(ui.painter(), rect);
         }
-        if state.open_submenu == Some(group) {
-            // 子菜单锚在触发它的分组行上，弹出面板会自动避让窗口底部。
-            submenu_anchor = Some(rect);
-        }
         if response.clicked() {
             if state.open_submenu == Some(group) {
                 state.open_submenu = None;
@@ -51,6 +47,11 @@ pub(super) fn draw_items(
                 state.open_submenu = Some(group);
                 state.open_select = None;
             }
+        }
+        if state.open_submenu == Some(group) {
+            // 子菜单以触发它的分组行为锚点，弹出面板会自动避让窗口底部。
+            // 这段放在点击处理之后，切换分组时同一帧就能定位到新的行。
+            submenu_anchor = Some(rect);
         }
         y += MENU_ROW_HEIGHT;
     }
@@ -67,7 +68,7 @@ pub(super) fn draw_items(
             );
             let current = values.get(field);
             let is_check = field.is_check();
-            // 复选框用“值是否大于 0”表示开关，点击后取反。
+            // 复选框用「值是否大于 0」表示开关状态，点击后取反。
             let value = (!is_check).then(|| field_value(language, field, values));
             let row_id = if is_check {
                 ("item-check", index)
