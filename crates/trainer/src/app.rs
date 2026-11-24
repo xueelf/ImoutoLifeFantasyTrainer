@@ -229,6 +229,7 @@ impl TrainerApp {
         let games = match probe::find_games() {
             Ok(games) => games,
             Err(error) => {
+                self.splash.stop();
                 self.set_error(self.text().scan_error.replace("{}", &error.to_string()));
                 return;
             }
