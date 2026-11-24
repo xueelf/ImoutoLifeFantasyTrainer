@@ -321,10 +321,11 @@ impl TrainerApp {
         let Some(mut session) = self.session.take() else {
             return;
         };
-        // 游戏已经退出时不要再弹变速恢复错误，否则关闭游戏会留下一个无用弹窗。
-        let report_speed_error = self.game_detected && session.is_process_alive();
         let pid = session.pid();
+        // shutdown 可能阻塞到远程调用超时。必须在它返回后再判断进程是否还活着，
+        // 否则游戏在恢复速度期间退出时仍会误报「恢复失败」。
         let speed_error = session.shutdown().err();
+        let report_speed_error = session.is_process_alive();
         if session.speedhack_unknown() {
             self.unknown_speed_pids.insert(pid);
         }
