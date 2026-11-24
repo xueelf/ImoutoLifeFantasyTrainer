@@ -8,7 +8,7 @@ repository.workspace = true
 publish.workspace = true
 description = "妹相随～黑白世界的缤纷冒险～修改器"
 
-# 保持既有 Release 文件名；Cargo Book 允许为兼容旧二进制名使用非 kebab-case。
+# 保留原有的 Release 文件名。为了兼容旧二进制名，Cargo Book 允许使用非 kebab-case。
 [[bin]]
 name = "ImoutoLifeFantasyTrainer"
 path = "src/main.rs"

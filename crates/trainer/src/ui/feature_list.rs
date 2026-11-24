@@ -20,7 +20,7 @@ pub fn draw(
 ) -> Option<FeatureAction> {
     let mut clicked = None;
     let count = views.len().max(1) as f32;
-    // 按行数均分高度并向下取偶，避免边框落在半像素上。
+    // 按行数均分高度并向下取偶数，避免边框落在半像素上。
     let row_height = ((rect.height() / count) / 2.0).floor() * 2.0;
     let list_top = rect.top() + ((rect.height() - row_height * count) / 2.0).floor();
     let key_font = theme::mono(12.0);

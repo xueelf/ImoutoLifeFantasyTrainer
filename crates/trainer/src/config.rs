@@ -25,7 +25,7 @@ pub const GAME_PROCESS_NAMES: &[&str] = &["Game.exe", "GamePro.exe"];
 pub const CURRENT_OFFSET: u32 = 0x00DA_D67C;
 
 // 两个已知版本里 WOLF 单实例检查（FindWindow）的 RVA。
-// 用它识别游戏 exe。即使进程没启动成功、字段还没初始化，也能认出版本。
+// 用它识别游戏 exe。即使进程没有启动成功、字段还没有初始化，也能识别版本。
 pub const SINGLE_INSTANCE_PATTERN_OFFSET: u32 = 0x0012_97D6;
 
 pub const SPEEDHACK_DLL_NAME: &str = "Speedhack-x86.dll";

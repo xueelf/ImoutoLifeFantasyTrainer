@@ -24,7 +24,7 @@ pub struct GameProcess {
 
 impl GameProcess {
     pub fn open(pid: u32) -> Result<Self> {
-        // 一次拿齐读写内存、冻结线程和注入所需的权限，避免后面反复打开进程。
+        // 一次获取读写内存、冻结线程和注入所需的权限，避免后续反复打开进程。
         let access = PROCESS_CREATE_THREAD
             | PROCESS_VM_OPERATION
             | PROCESS_VM_READ
@@ -39,7 +39,7 @@ impl GameProcess {
 
         let result = (|| -> Result<Self> {
             // SAFETY: pid 就是要读模块列表的进程。
-            // snapshot 在下面关闭，出错时也不会漏。
+            // snapshot 会在下面关闭，出错时也不会泄漏。
             let snapshot =
                 unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid) }
                     .context("无法创建模块快照")?;

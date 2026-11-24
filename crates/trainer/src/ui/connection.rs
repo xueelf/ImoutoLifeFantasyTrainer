@@ -150,7 +150,7 @@ fn draw_centered_text(ui: &Ui, rect: Rect, y: f32, text: &str, size: f32, color:
 }
 
 fn chinese_count(count: usize) -> String {
-    // 中文多开文案用汉字数字，2 读作“两”。
+    // 中文多开文案用汉字数字，2 读作「两」。
     if count == 2 {
         return "两".to_string();
     }

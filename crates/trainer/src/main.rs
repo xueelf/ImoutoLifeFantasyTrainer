@@ -33,7 +33,7 @@ fn load_window_icon(assets: &AssetService) -> Option<egui::IconData> {
 }
 
 fn main() -> eframe::Result {
-    // 单实例锁同时保护全局热键和游戏内存写入，避免两个修改器互相抢资源。
+    // 单实例锁同时保护全局热键和游戏内存写入，避免两个修改器争用资源。
     let _instance = match SingleInstance::acquire() {
         Ok(Some(instance)) => instance,
         Ok(None) => {

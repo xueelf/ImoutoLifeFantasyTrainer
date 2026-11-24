@@ -117,7 +117,7 @@ fn freeze_loop(
     let mut high_resolution = false;
 
     loop {
-        // 没有锁定时阻塞在条件变量上。恢复高精度计时器，避免空闲时浪费电量。
+        // 没有锁定时阻塞在条件变量上，并还原计时器精度，避免空闲时浪费电量。
         let mut entries = lock_entries(&entries);
         while entries.is_empty() {
             if stop.load(Ordering::Relaxed) {
@@ -158,9 +158,9 @@ fn freeze_loop(
             }
         }
         if let Some(message) = failed {
-            // 写入失败时清空全部锁定项，与 UI 统一关闭所有冻结开关保持一致。
+            // 出现错误时清空全部锁定项，让后台状态与 UI 关闭所有冻结开关保持一致。
             entries.clear();
-            // 游戏已退出时不作为错误上报，避免关闭游戏瞬间弹出无用的写入失败提示。
+            // 游戏已退出时不作为错误上报，避免关闭游戏瞬间弹出无用的错误提示。
             if memory.is_process_alive() {
                 // 只保留第一条错误，避免错误弹窗被后续失败反复触发。
                 let mut slot = lock_error(&error);

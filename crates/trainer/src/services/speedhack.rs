@@ -57,7 +57,7 @@ impl SpeedhackService {
     }
 
     pub fn enable(&mut self) -> Result<()> {
-        // 上一次远程调用超时后，DLL 状态可能已经无法确认，只允许关闭修改器触发看门狗恢复。
+        // 上一次远程调用超时后，DLL 状态可能已经无法确认，只能关闭修改器，让看门狗恢复速度。
         if self.state_unknown {
             bail!("Speedhack 状态未知，请关闭修改器以触发恢复");
         }
@@ -233,7 +233,7 @@ impl SpeedhackService {
         if handle == 0 {
             return;
         }
-        // CreateRemoteThread 失败时 Setup 根本没有启动，需要由修改器收回复制到目标进程的句柄。
+        // CreateRemoteThread 失败时 Setup 根本没有启动，需要由修改器关闭复制到目标进程的句柄。
         // DUPLICATE_CLOSE_SOURCE (1) 会直接关闭源进程（此处即游戏进程）中的句柄。
         // SAFETY: self.process_handle 有 PROCESS_DUP_HANDLE 权限，handle 是刚复制进去的有效句柄。
         let _ = unsafe {
@@ -251,7 +251,7 @@ impl SpeedhackService {
 
     fn allocate(&self, size: usize) -> Result<*mut c_void> {
         // SAFETY: 目标进程有 PROCESS_VM_OPERATION 权限。
-        // 返回的指针会检查，之后也只配合这个进程句柄使用。
+        // 返回的指针会经过检查，之后也只配合这个进程句柄使用。
         let address = unsafe {
             VirtualAllocEx(
                 self.process_handle,
@@ -370,7 +370,7 @@ fn export_offsets(dll_path: &std::path::Path) -> Result<(u32, u32)> {
 }
 
 fn load_export_offsets(dll_path: &std::path::Path) -> Result<(u32, u32)> {
-    // 先在修改器进程里加载 DLL，只为了拿到导出函数地址，随后立即卸载并换算成 RVA。
+    // 先在修改器进程里加载 DLL，只为了获取导出函数地址，随后立即卸载并换算成 RVA。
     let wide = to_wide(&dll_path.to_string_lossy());
     // SAFETY: 路径是以 NUL 结尾的 UTF-16 字符串，模块在下面释放。
     let module =

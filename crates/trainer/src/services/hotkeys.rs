@@ -21,7 +21,7 @@ impl HotkeyService {
 
         for feature in FEATURES {
             let hotkey = HotKey::new(None, code(feature.hotkey));
-            // 被其他程序占用的热键只记录下来，不阻止修改器启动。
+            // 被其他程序占用的热键只记录下来，由启动流程提示用户。
             if manager.register(hotkey).is_ok() {
                 actions.insert(hotkey.id(), feature.action);
             } else {

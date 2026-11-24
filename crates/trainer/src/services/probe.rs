@@ -13,8 +13,8 @@ use crate::services::memory::GameMemory;
 use crate::services::process::GameProcess;
 use crate::services::win32::from_wide;
 
-/// 通过了 exe 代码特征检查的进程。
-/// `values` 为 `Some` 表示已知内存字段当前已初始化且读得出正常值。
+/// 已通过 exe 代码特征检查的进程。
+/// `values` 为 `Some` 表示已知内存字段已经初始化，并且能读出正常值。
 pub struct FoundGame {
     pub process: GameProcess,
     pub values: Option<MenuValues>,
@@ -33,7 +33,7 @@ pub fn find_games() -> Result<Vec<FoundGame>> {
 
     let mut games = Vec::new();
     let mut open_error = None;
-    // 同名进程可能不止一个。打开失败的只记录 ACCESS_DENIED，最后再统一提示管理员权限。
+    // 同名进程可能不止一个。打开失败时只记录 ACCESS_DENIED，最后统一提示管理员权限。
     // SAFETY: snapshot 是有效快照，entry.dwSize 已经填好。
     if unsafe { Process32FirstW(snapshot, &mut entry) }.is_ok() {
         loop {
@@ -98,7 +98,7 @@ fn has_game_code(memory: &GameMemory) -> bool {
     }
 
     // 匹配 WOLF 单实例检查开头的 push 0 / push imm32 / call / test eax,eax / je。
-    // 不依赖完整函数，只要这几个字节还在就能认出版本。
+    // 不依赖完整函数，只要这几个字节还在就能识别版本。
     bytes[0] == 0x6A
         && bytes[1] == 0x00
         && bytes[2] == 0x68

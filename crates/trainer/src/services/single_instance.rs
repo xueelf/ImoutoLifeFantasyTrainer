@@ -19,7 +19,7 @@ impl SingleInstance {
         let handle = unsafe { CreateMutexW(None, false, PCWSTR(name.as_ptr())) }
             .context("无法创建单实例互斥锁")?;
 
-        // ERROR_ALREADY_EXISTS 表示已有实例在运行。句柄仍然要关闭，直接返回 None 会漏。
+        // ERROR_ALREADY_EXISTS 表示已有实例在运行。句柄仍然要关闭，否则会泄漏。
         // SAFETY: GetLastError 没有前置条件，调用完马上读取即可。
         if unsafe { GetLastError() } == ERROR_ALREADY_EXISTS {
             // SAFETY: handle 是 CreateMutexW 返回的，这个分支之后不再用。

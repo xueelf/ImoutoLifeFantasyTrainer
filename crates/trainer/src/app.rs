@@ -295,7 +295,7 @@ impl TrainerApp {
             .as_ref()
             .is_some_and(|session| session.pid() == game.process.pid)
         {
-            // 游戏没换进程时直接采用本次扫描读到的菜单值快照。
+            // 游戏没有切换进程时，直接采用本次扫描读到的菜单值快照。
             self.game_wait_started = None;
             self.menu_values = values;
             return;
@@ -468,7 +468,7 @@ impl TrainerApp {
         let Some(session) = &self.session else {
             return;
         };
-        // 游戏里星期由日期决定，单独改周会立刻对不上。这里在写日期时一并算好星期。
+        // 游戏里的星期由日期决定，单独修改星期会和日期不一致，所以写入日期时一并计算星期。
         let week = (field == FieldId::TimeDay).then(|| (value.max(1) - 1).rem_euclid(7));
         let mut result = session.write_field(field, value);
         if result.is_ok()

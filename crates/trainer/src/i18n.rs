@@ -222,7 +222,7 @@ pub fn weekday(language: Language, day: i32) -> &'static str {
     const ZH: [&str; 7] = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
     const EN: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const JA: [&str; 7] = ["月", "火", "水", "木", "金", "土", "日"];
-    // 游戏天数从 1 开始，按 7 天循环。非法值先钳到 1。
+    // 游戏天数从 1 开始，按 7 天循环。非法值先限制为 1。
     let index = (day.max(1) - 1).rem_euclid(7) as usize;
     match language {
         Language::Zh => ZH[index],

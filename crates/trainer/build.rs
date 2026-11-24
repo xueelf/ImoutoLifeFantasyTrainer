@@ -26,7 +26,7 @@ fn main() {
         .unwrap_or_else(|| workspace.join("target"));
     let target = env::var("TARGET").unwrap();
     let profile = env::var("PROFILE").unwrap();
-    // 修改器会内嵌 speedhack.dll。Debug 构建时如果还没编 DLL，就退回 release 版本。
+    // 修改器会内嵌 speedhack.dll。Debug 构建时如果还没有编译 DLL，就退回 release 版本。
     let mut speedhack_dll = target_dir
         .join(&target)
         .join(&profile)

@@ -19,7 +19,7 @@ const BODY_TOP: f32 = HEADER_HEIGHT + MENU_HEIGHT;
 const BODY_BOTTOM: f32 = BODY_TOP + BODY_HEIGHT;
 const STATUS_PANEL_HEIGHT: f32 = BODY_BOTTOM - MENU_Y;
 
-// 菜单不允许上下留白：面板高度完全由行数决定，所有菜单行等高。
+// 菜单不留上下留白，面板高度完全由行数决定，所有菜单行等高。
 const MENU_ROW_HEIGHT: f32 = 32.0;
 
 const ROW_INSET: f32 = 4.0;
@@ -253,7 +253,7 @@ pub fn draw_panels(
     if let Some(action) = action {
         match action {
             MenuAction::Select { .. } | MenuAction::Language(_) => {
-                // 选完下拉项只收起下拉，状态面板继续留着。
+                // 选完下拉项只收起下拉，状态面板保持打开。
                 state.open_select = None;
             }
             MenuAction::Command(_) => {

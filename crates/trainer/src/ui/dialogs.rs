@@ -72,7 +72,7 @@ pub fn draw_prompt(
             .align(Align2::LEFT_CENTER)
             .desired_width(f32::INFINITY),
     );
-    // 每次打开输入框都抢焦点，Enter 提交、Esc 取消。
+    // 每次打开输入框都会主动获取焦点，Enter 提交，Esc 取消。
     if !response.has_focus() {
         response.request_focus();
     }

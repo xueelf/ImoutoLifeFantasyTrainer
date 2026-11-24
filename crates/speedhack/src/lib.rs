@@ -35,7 +35,7 @@ static_detour! {
 
 /// 虚拟时钟的基准点。
 ///
-/// 改速前先把当前虚拟时间写进 `offset`，之后只缩放新增的真实时间，
+/// 调整倍率前先把当前虚拟时间写进 `offset`，之后只缩放新增的真实时间，
 /// 这样切换倍率时不会出现时间跳变。
 #[derive(Clone, Copy)]
 struct ClockState {
@@ -76,7 +76,7 @@ impl ClockState {
         self.session == session
     }
 
-    /// 只让看门狗失效当前会话，避免旧会话的线程误伤新会话。
+    /// 让看门狗只使当前会话失效，避免旧会话的线程影响新会话。
     fn invalidate_session(&mut self, session: i32) -> bool {
         if self.session == session {
             self.session = 0;
@@ -216,7 +216,7 @@ fn initialize_hooks() -> bool {
             return false;
         }
 
-        // 装 hook 前先记下真实时钟，让虚拟时钟从当前游戏时间起步。
+        // 安装 hook 前先记下真实时钟，让虚拟时钟从当前游戏时间起步。
         let gtc = GetTickCount();
         let gtc64 = GetTickCount64();
         let mut qpc = 0i64;
@@ -301,13 +301,13 @@ fn start_watchdog(watchdog: usize, session: i32) -> bool {
         .is_ok();
 
     if !spawned {
-        // SAFETY: 线程没创建成功，这个复制出来的句柄由这里关闭。
+        // SAFETY: 线程没有创建成功，这个复制出来的句柄由这里关闭。
         let _ = unsafe { CloseHandle(watchdog as HANDLE) };
     }
     spawned
 }
 
-/// 初始化只做一次。原子标记和互斥锁配合，避免并发 `Setup` 重复挂 hook。
+/// 初始化只做一次。原子标记和互斥锁配合，避免并发 `Setup` 重复安装 hook。
 fn ensure_hooks() -> bool {
     if HOOK_READY.load(Ordering::Acquire) {
         return true;
