@@ -142,22 +142,22 @@ fn freeze_loop(
         }
 
         let mut failed = None;
-        entries.retain(
-            |entry| match memory.write_offset(entry.field_offset, entry.value) {
-                Ok(()) => true,
-                Err(write_error) => {
-                    if failed.is_none() {
-                        failed = Some(write_error.to_string());
-                    }
-                    false
-                }
-            },
-        );
+        for entry in entries.iter() {
+            if let Err(write_error) = memory.write_offset(entry.field_offset, entry.value) {
+                failed = Some(write_error.to_string());
+                break;
+            }
+        }
         if let Some(message) = failed {
-            // 只保留第一条错误，避免错误弹窗被后续失败反复触发。
-            let mut slot = lock_error(&error);
-            if slot.is_none() {
-                *slot = Some(message);
+            // 写入失败时清空全部锁定项，与 UI 统一关闭所有冻结开关保持一致。
+            entries.clear();
+            // 游戏已退出时不作为错误上报，避免关闭游戏瞬间弹出无用的写入失败提示。
+            if memory.is_process_alive() {
+                // 只保留第一条错误，避免错误弹窗被后续失败反复触发。
+                let mut slot = lock_error(&error);
+                if slot.is_none() {
+                    *slot = Some(message);
+                }
             }
         }
 

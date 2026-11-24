@@ -46,6 +46,10 @@ impl GameSession {
         self.process.is_alive()
     }
 
+    pub fn unlock_all(&self) {
+        self.freeze.unlock_all();
+    }
+
     pub fn take_freeze_error(&self) -> Option<String> {
         self.freeze.take_error()
     }

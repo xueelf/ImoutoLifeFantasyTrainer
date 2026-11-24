@@ -366,6 +366,9 @@ impl TrainerApp {
         else {
             return;
         };
+        if let Some(session) = &self.session {
+            session.unlock_all();
+        }
         let message = self.text().write_error.replace("{}", &error);
         self.set_error(message);
         // 冻结线程只会上报第一条写入错误。变速由 speedhack 自己管理状态，不在这里关闭。
