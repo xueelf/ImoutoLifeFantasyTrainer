@@ -2,8 +2,9 @@
 
 use anyhow::{Context, Result};
 use std::ffi::c_void;
-use windows::Win32::Foundation::HANDLE;
+use windows::Win32::Foundation::{HANDLE, WAIT_TIMEOUT};
 use windows::Win32::System::Diagnostics::Debug::{ReadProcessMemory, WriteProcessMemory};
+use windows::Win32::System::Threading::WaitForSingleObject;
 
 use crate::config::CURRENT_OFFSET;
 use crate::config::pointer::PointerChain;
@@ -29,6 +30,11 @@ impl GameMemory {
 
     pub fn module_base(&self) -> u32 {
         self.module_base
+    }
+
+    pub fn is_process_alive(&self) -> bool {
+        // SAFETY: 句柄来自 GameProcess，具有 PROCESS_SYNCHRONIZE 权限，在所属会话存活期间有效。
+        unsafe { WaitForSingleObject(self.handle(), 0) == WAIT_TIMEOUT }
     }
 
     pub fn read_bytes(&self, address: u32, size: usize) -> Result<Vec<u8>> {

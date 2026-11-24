@@ -64,6 +64,11 @@ impl SpeedhackService {
     }
 
     pub fn disable(&mut self) -> Result<()> {
+        // 游戏进程已经退出时无需再通过远程线程恢复速度。
+        // SAFETY: self.process_handle 来自 GameProcess，具有 PROCESS_SYNCHRONIZE 权限。
+        if unsafe { WaitForSingleObject(self.process_handle, 0) } != WAIT_TIMEOUT {
+            return Ok(());
+        }
         if self.state_unknown {
             bail!("Speedhack 状态未知，请关闭修改器以触发恢复");
         }

@@ -42,6 +42,10 @@ impl GameSession {
         self.process.pid
     }
 
+    pub fn is_process_alive(&self) -> bool {
+        self.process.is_alive()
+    }
+
     pub fn take_freeze_error(&self) -> Option<String> {
         self.freeze.take_error()
     }

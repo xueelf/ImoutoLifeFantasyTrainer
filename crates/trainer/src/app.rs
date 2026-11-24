@@ -208,6 +208,14 @@ impl TrainerApp {
     }
 
     fn poll(&mut self, ctx: &egui::Context) {
+        if self
+            .session
+            .as_ref()
+            .is_some_and(|session| !session.is_process_alive())
+        {
+            self.game_detected = false;
+            self.detach(ctx);
+        }
         self.handle_freeze_error();
         // 进程扫描每秒最多一次，避免频繁创建 Toolhelp 快照。
         if self
@@ -313,7 +321,7 @@ impl TrainerApp {
             return;
         };
         // 游戏已经退出时不要再弹变速恢复错误，否则关闭游戏会留下一个无用弹窗。
-        let report_speed_error = self.game_detected;
+        let report_speed_error = self.game_detected && session.is_process_alive();
         let pid = session.pid();
         let speed_error = session.shutdown().err();
         if session.speedhack_unknown() {

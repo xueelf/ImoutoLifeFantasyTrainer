@@ -2,14 +2,15 @@
 
 use anyhow::{Context, Result};
 use std::mem::size_of;
-use windows::Win32::Foundation::{CloseHandle, HANDLE};
+use windows::Win32::Foundation::{CloseHandle, HANDLE, WAIT_TIMEOUT};
 use windows::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, MODULEENTRY32W, Module32FirstW, TH32CS_SNAPMODULE,
     TH32CS_SNAPMODULE32,
 };
 use windows::Win32::System::Threading::{
     OpenProcess, PROCESS_CREATE_THREAD, PROCESS_DUP_HANDLE, PROCESS_QUERY_INFORMATION,
-    PROCESS_VM_OPERATION, PROCESS_VM_READ, PROCESS_VM_WRITE,
+    PROCESS_SYNCHRONIZE, PROCESS_VM_OPERATION, PROCESS_VM_READ, PROCESS_VM_WRITE,
+    WaitForSingleObject,
 };
 
 use crate::services::memory::GameMemory;
@@ -29,7 +30,8 @@ impl GameProcess {
             | PROCESS_VM_READ
             | PROCESS_VM_WRITE
             | PROCESS_DUP_HANDLE
-            | PROCESS_QUERY_INFORMATION;
+            | PROCESS_QUERY_INFORMATION
+            | PROCESS_SYNCHRONIZE;
 
         // SAFETY: pid 来自 Toolhelp 的进程项，access 是标准的权限组合。
         let handle = unsafe { OpenProcess(access, false, pid) }
@@ -69,6 +71,12 @@ impl GameProcess {
 
     pub fn handle(&self) -> HANDLE {
         self.handle
+    }
+
+    pub fn is_alive(&self) -> bool {
+        // SAFETY: self.handle 是具有 PROCESS_SYNCHRONIZE 权限的有效进程句柄。
+        // 0 超时只检查进程内核对象是否仍处于未触发（运行中）状态。
+        unsafe { WaitForSingleObject(self.handle, 0) == WAIT_TIMEOUT }
     }
 
     pub fn memory(&self) -> GameMemory {
