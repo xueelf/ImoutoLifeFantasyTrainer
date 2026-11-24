@@ -16,7 +16,8 @@ use crate::services::assets::AssetService;
 use crate::services::hotkeys::HotkeyService;
 use crate::services::probe;
 use crate::services::session::GameSession;
-use crate::services::{sound, win32};
+use crate::services::sound::{self, Sound};
+use crate::services::win32;
 use crate::ui::connection::{self, ConnectionState};
 use crate::ui::dialogs::{self, PromptResult, PromptState};
 use crate::ui::feature_list::{self, FeatureView};
@@ -196,7 +197,7 @@ impl TrainerApp {
         ctx.send_viewport_cmd(ViewportCommand::Title(
             i18n::strings(language).title.to_owned(),
         ));
-        self.play_sound("Enter");
+        self.play_sound(Sound::Enter);
     }
 
     fn poll(&mut self, ctx: &egui::Context) {
@@ -398,7 +399,7 @@ impl TrainerApp {
         match result {
             Ok(()) => {
                 self.features[index].is_on = !was_on;
-                self.play_sound(if was_on { "Cancel" } else { "Enter" });
+                self.play_sound(if was_on { Sound::Cancel } else { Sound::Enter });
             }
             Err(error) => {
                 self.set_error(error.to_string());
@@ -421,15 +422,15 @@ impl TrainerApp {
                 self.write_menu_value(
                     field,
                     i32::from(checked),
-                    if checked { "Enter" } else { "Cancel" },
+                    if checked { Sound::Enter } else { Sound::Cancel },
                 );
             }
             MenuAction::Select { field, value } => {
-                self.write_menu_value(field, value, "Enter");
+                self.write_menu_value(field, value, Sound::Enter);
             }
             MenuAction::Command(command) => {
                 self.close_menu();
-                self.play_sound("Enter");
+                self.play_sound(Sound::Enter);
                 match command {
                     NavAction::Documentation => win32::open_url(config::DOCUMENTATION_URL),
                     NavAction::Repository => win32::open_url(config::REPOSITORY_URL),
@@ -439,7 +440,7 @@ impl TrainerApp {
         }
     }
 
-    fn write_menu_value(&mut self, field: FieldId, value: i32, sound_name: &str) {
+    fn write_menu_value(&mut self, field: FieldId, value: i32, sound: Sound) {
         let (min, max) = field.bounds();
         if !(min..=max).contains(&value) {
             let message = self
@@ -467,7 +468,7 @@ impl TrainerApp {
                 if let Some(week) = week {
                     self.menu_values.set(FieldId::TimeWeek, week);
                 }
-                self.play_sound(sound_name);
+                self.play_sound(sound);
             }
             Err(error) => {
                 self.set_error(self.text().write_error.replace("{}", &error.to_string()));
@@ -487,11 +488,11 @@ impl TrainerApp {
             return;
         }
         self.intro_sound_played = true;
-        self.play_sound("onj001");
+        self.play_sound(Sound::Intro);
     }
 
-    fn play_sound(&self, name: &str) {
-        sound::play(&self.assets, name);
+    fn play_sound(&self, sound: Sound) {
+        sound::play(&self.assets, sound);
     }
 
     fn set_error(&mut self, message: String) {
@@ -546,7 +547,7 @@ impl TrainerApp {
         if let Some((name, bytes)) = self.assets.random_card_excluding(current) {
             self.set_cover(ctx, name, Some(bytes));
             self.cover_flip = COVER_FLIP_SECS;
-            self.play_sound("Select");
+            self.play_sound(Sound::Select);
         }
     }
 
@@ -853,10 +854,10 @@ impl TrainerApp {
             let current = self.menu_values.get(dialog.field);
             match dialogs::draw_prompt(ui, &mut dialog, current, self.language) {
                 PromptResult::Submit(value) => {
-                    self.write_menu_value(dialog.field, value, "Enter");
+                    self.write_menu_value(dialog.field, value, Sound::Enter);
                 }
                 PromptResult::Cancel => {
-                    self.play_sound("Cancel");
+                    self.play_sound(Sound::Cancel);
                 }
                 PromptResult::None => {
                     self.prompt_dialog = Some(dialog);

@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use include_dir::{Dir, include_dir};
 
 use crate::config::COVER_PLACEHOLDER;
+use crate::services::sound::Sound;
 
 static ASSETS: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
@@ -64,9 +65,8 @@ impl AssetService {
             .collect()
     }
 
-    pub fn sound(&self, name: &str) -> Option<&'static [u8]> {
-        let path = format!("sounds/{name}.wav");
-        ASSETS.get_file(path).map(|file| file.contents())
+    pub fn sound(&self, sound: Sound) -> Option<&'static [u8]> {
+        ASSETS.get_file(sound.path()).map(|file| file.contents())
     }
 
     pub fn font(&self) -> &'static [u8] {
