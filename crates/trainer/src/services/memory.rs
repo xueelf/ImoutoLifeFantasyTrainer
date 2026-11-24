@@ -7,7 +7,6 @@ use windows::Win32::System::Diagnostics::Debug::{ReadProcessMemory, WriteProcess
 use windows::Win32::System::Threading::WaitForSingleObject;
 
 use crate::config::CURRENT_OFFSET;
-use crate::config::pointer::PointerChain;
 
 // 句柄归 GameProcess 所有，这里只是借用。不能活得比所属的 GameSession 久。
 #[derive(Clone, Copy)]
@@ -86,10 +85,10 @@ impl GameMemory {
         self.read_u32(root)
     }
 
-    pub fn read_chain(&self, chain: &PointerChain) -> Result<i32> {
+    pub fn read_offset(&self, field_offset: u32) -> Result<i32> {
         // 字段地址 = root + field_offset，按小端 i32 读取。
         let root = self.resolve_root()?;
-        Ok(self.read_u32(root.wrapping_add(chain.field_offset))? as i32)
+        Ok(self.read_u32(root.wrapping_add(field_offset))? as i32)
     }
 
     pub fn write_offset(&self, field_offset: u32, value: i32) -> Result<()> {

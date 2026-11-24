@@ -1,7 +1,6 @@
 //! 应用常量、游戏进程信息和静态菜单数据。
 
 pub mod feature;
-pub mod nav;
 pub mod pointer;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

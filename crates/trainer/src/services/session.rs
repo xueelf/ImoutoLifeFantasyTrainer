@@ -1,9 +1,12 @@
 //! 一次游戏会话：把内存读写、冻结和变速服务串在一起。
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 
 use crate::config::feature::FeatureAction;
-use crate::config::pointer::{self, PointerChain};
+use crate::config::pointer::{
+    BATTLE_SCORE_OFFSET, BATTLE_WINNER_OFFSET, FieldId, HAD_TEA_OFFSET, MenuValues,
+    TOOK_BATH_OFFSET,
+};
 use crate::services::freeze::FreezeService;
 use crate::services::memory::GameMemory;
 use crate::services::process::GameProcess;
@@ -54,26 +57,21 @@ impl GameSession {
         self.freeze.take_error()
     }
 
-    pub fn read_menu_values(&self, paths: &[String]) -> Vec<(String, i32)> {
-        // 读取失败的字段直接跳过，调用方通过返回数量判断数据是否完整。
-        paths
-            .iter()
-            .filter_map(|path| {
-                let chain = pointer::lookup(path)?;
-                let value = self.memory.read_chain(chain).ok()?;
-                Some((path.clone(), value))
-            })
-            .collect()
+    pub fn read_menu_values(&self) -> Option<MenuValues> {
+        let mut values = MenuValues::default();
+        for field in FieldId::ALL {
+            let value = self.memory.read_offset(field.offset()).ok()?;
+            values.set(field, value);
+        }
+        Some(values)
     }
 
-    pub fn write_chain(&self, path: &str, value: i32) -> Result<()> {
-        // 先按指针表的安全范围校验，再写进游戏。
-        let (min, max) = pointer::bounds(path);
+    pub fn write_field(&self, field: FieldId, value: i32) -> Result<()> {
+        let (min, max) = field.bounds();
         if !(min..=max).contains(&value) {
             bail!("数值超出范围：{min}..={max}");
         }
-        let chain = pointer::lookup(path).with_context(|| format!("未知指针：{path}"))?;
-        self.freeze.write_value(chain.field_offset, value)
+        self.freeze.write_value(field.offset(), value)
     }
 
     pub fn shutdown(&mut self) -> Result<()> {
@@ -85,82 +83,65 @@ impl GameSession {
 
     pub fn enable_feature(&mut self, action: FeatureAction) -> Result<()> {
         match action {
-            FeatureAction::InstantWin => self.lock(&pointer::BATTLE_WINNER, 1),
-            FeatureAction::Invincibility => self.lock(&pointer::BATTLE_SCORE, 114_514),
+            FeatureAction::InstantWin => self.freeze.lock(BATTLE_WINNER_OFFSET, 1),
+            FeatureAction::Invincibility => self.freeze.lock(BATTLE_SCORE_OFFSET, 114_514),
             FeatureAction::TripleSpeed => self.speedhack.enable(),
             FeatureAction::TimeStop => self.lock_time(),
-            FeatureAction::UnlimitedBaths => self.lock(&pointer::TOOK_BATH, 0),
-            FeatureAction::UnlimitedTea => self.lock(&pointer::HAD_TEA, 0),
+            FeatureAction::UnlimitedBaths => self.freeze.lock(TOOK_BATH_OFFSET, 0),
+            FeatureAction::UnlimitedTea => self.freeze.lock(HAD_TEA_OFFSET, 0),
         }
     }
 
     pub fn disable_feature(&mut self, action: FeatureAction) -> Result<()> {
         match action {
             FeatureAction::InstantWin => {
-                self.unlock(&pointer::BATTLE_WINNER);
+                self.freeze.unlock(BATTLE_WINNER_OFFSET);
                 Ok(())
             }
             FeatureAction::Invincibility => {
-                self.unlock(&pointer::BATTLE_SCORE);
+                self.freeze.unlock(BATTLE_SCORE_OFFSET);
                 Ok(())
             }
             FeatureAction::TripleSpeed => self.speedhack.disable(),
             FeatureAction::TimeStop => {
-                self.unlock(&pointer::TIME_DAY);
-                self.unlock(&pointer::TIME_HOUR);
-                self.unlock(&pointer::TIME_MINUTE);
-                self.unlock(&pointer::TIME_WEEK);
+                self.freeze.unlock(FieldId::TimeDay.offset());
+                self.freeze.unlock(FieldId::TimeHour.offset());
+                self.freeze.unlock(FieldId::TimeMinute.offset());
+                self.freeze.unlock(FieldId::TimeWeek.offset());
                 Ok(())
             }
             FeatureAction::UnlimitedBaths => {
-                self.unlock(&pointer::TOOK_BATH);
+                self.freeze.unlock(TOOK_BATH_OFFSET);
                 Ok(())
             }
             FeatureAction::UnlimitedTea => {
-                self.unlock(&pointer::HAD_TEA);
+                self.freeze.unlock(HAD_TEA_OFFSET);
                 Ok(())
             }
         }
     }
 
-    fn lock(&self, chain: &PointerChain, value: i32) -> Result<()> {
-        self.freeze.lock(chain.field_offset, value)
-    }
-
-    fn unlock(&self, chain: &PointerChain) {
-        self.freeze.unlock(chain.field_offset);
-    }
-
     fn lock_time(&self) -> Result<()> {
         // 先读取四项当前值，再逐项加锁。任一项失败就回滚已锁字段，避免只停了一半时间。
-        let locked = [
-            (
-                &pointer::TIME_DAY,
-                self.memory.read_chain(&pointer::TIME_DAY)?,
-            ),
-            (
-                &pointer::TIME_HOUR,
-                self.memory.read_chain(&pointer::TIME_HOUR)?,
-            ),
-            (
-                &pointer::TIME_MINUTE,
-                self.memory.read_chain(&pointer::TIME_MINUTE)?,
-            ),
-            (
-                &pointer::TIME_WEEK,
-                self.memory.read_chain(&pointer::TIME_WEEK)?,
-            ),
+        let fields = [
+            FieldId::TimeDay,
+            FieldId::TimeHour,
+            FieldId::TimeMinute,
+            FieldId::TimeWeek,
         ];
+        let mut locked = [(0u32, 0i32); 4];
+        for (slot, field) in locked.iter_mut().zip(fields) {
+            let offset = field.offset();
+            *slot = (offset, self.memory.read_offset(offset)?);
+        }
 
-        let mut done: Vec<&PointerChain> = Vec::new();
-        for (chain, value) in locked {
-            if let Err(error) = self.lock(chain, value) {
-                for chain in done {
-                    self.unlock(chain);
+        for (done, (offset, value)) in locked.into_iter().enumerate() {
+            if let Err(error) = self.freeze.lock(offset, value) {
+                for (rollback_offset, _) in &locked[..done] {
+                    self.freeze.unlock(*rollback_offset);
                 }
                 return Err(error);
             }
-            done.push(chain);
         }
         Ok(())
     }

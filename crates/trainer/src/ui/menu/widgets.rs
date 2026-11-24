@@ -1,12 +1,10 @@
 //! 菜单行、选项行和面板的共用绘制组件。
 
-use std::collections::HashMap;
-
 use eframe::egui::{
     self, Align2, Color32, CornerRadius, Rect, Sense, Stroke, StrokeKind, Ui, Vec2,
 };
 
-use crate::config::nav::{self, NavNode, NavType};
+use crate::config::pointer::{FieldId, MenuValues};
 use crate::i18n::{self, Language};
 use crate::ui::theme;
 
@@ -14,6 +12,7 @@ use super::{
     BODY_BOTTOM, LABEL_VALUE_GAP, MENU_ROW_HEIGHT, MENU_WIDTH, MENU_X, MENU_Y, OPTION_FONT_SIZE,
     OPTION_LABEL_X, OPTION_RADIO_X, ROW_TEXT_INSET, SIDE_X,
 };
+
 pub(crate) enum RowKind {
     Group,
     Prompt,
@@ -268,31 +267,13 @@ pub(crate) fn circle(
     }
 }
 
-pub(crate) fn node_value(
-    language: Language,
-    node: &NavNode,
-    values: &HashMap<String, i32>,
-) -> String {
-    let value = values.get(&node.path).copied().unwrap_or(0);
-    match node.kind {
-        NavType::Select => node
-            .options
-            .iter()
-            .find(|option| option.value == value)
-            .map(|option| i18n::nav_label(language, option.caption).to_string())
-            .unwrap_or_else(|| value.to_string()),
-        _ => nav::format_count(node.format, value),
+pub(crate) fn field_value(language: Language, field: FieldId, values: &MenuValues) -> String {
+    let value = values.get(field);
+    if !field.options().is_empty() {
+        i18n::option_label(language, field, value)
+            .map(str::to_owned)
+            .unwrap_or_else(|| value.to_string())
+    } else {
+        field.format_value(value)
     }
-}
-
-pub(crate) fn find_node<'a>(nodes: &'a [NavNode], path: &str) -> Option<&'a NavNode> {
-    for node in nodes {
-        if node.path == path {
-            return Some(node);
-        }
-        if let Some(found) = find_node(&node.children, path) {
-            return Some(found);
-        }
-    }
-    None
 }

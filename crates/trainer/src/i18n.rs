@@ -1,8 +1,9 @@
 //! 三语文案和菜单标签。所有界面文字都从这里取。
 
 use crate::config::feature::{FeatureAction, FeatureDefinition};
+use crate::config::pointer::{FieldId, ItemGroup, NavAction};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Language {
     Zh,
     En,
@@ -23,11 +24,19 @@ impl Language {
         }
     }
 
-    pub fn native_name(self) -> &'static str {
+    pub const fn native_name(self) -> &'static str {
         match self {
             Self::Zh => "中文",
             Self::En => "English",
             Self::Ja => "日本語",
+        }
+    }
+
+    pub const fn pick(self, zh: &'static str, en: &'static str, ja: &'static str) -> &'static str {
+        match self {
+            Self::Zh => zh,
+            Self::En => en,
+            Self::Ja => ja,
         }
     }
 }
@@ -62,6 +71,11 @@ define_strings! {
     footer_multi => ["只保留一个游戏窗口", "Keep only one game window", "ゲームウィンドウを1つだけ残す"],
     footer_refreshing => ["每秒刷新", "Refreshes every second", "毎秒更新"],
     footer_waiting => ["等待游戏进程", "Waiting for game process", "ゲームプロセスを待機中"],
+    tab_items => ["道具", "Items", "アイテム"],
+    tab_status => ["状态", "Status", "ステータス"],
+    tab_help => ["帮助", "Help", "ヘルプ"],
+    imouto => ["妹妹", "Sister", "妹"],
+    oniichan => ["哥哥", "Brother", "兄"],
     language => ["语言", "Language", "言語"],
     current => ["当前", "Current", "現在"],
     date => ["日期", "Date", "日付"],
@@ -93,14 +107,13 @@ define_strings! {
     multi_hint => ["只保留一个游戏窗口，修改器会自动重新附加", "Keep only one game window; the trainer will reattach automatically", "ゲームウィンドウを1つだけ残してください。自動で再接続します"],
     hotkeys_busy => ["以下全局热键被占用：{}", "These global hotkeys are already in use: {}", "以下のグローバルホットキーは使用中です：{}"],
     hotkeys_failed => ["注册全局热键失败：{}", "Failed to register global hotkeys: {}", "グローバルホットキーの登録に失敗しました：{}"],
-    missing_pointer => ["菜单缺少指针配置：{}", "Missing pointer configuration for menu: {}", "メニューのポインター設定がありません：{}"],
     scan_error => ["扫描游戏进程失败：{}", "Failed to scan game processes: {}", "ゲームプロセスのスキャンに失敗しました：{}"],
     write_error => ["写入失败。\n\n{}", "Write failed.\n\n{}", "書き込みに失敗しました。\n\n{}"],
     speed_restore_failed => ["游戏速度恢复失败，当前速度可能未确认。\n\n{}", "Failed to restore game speed; the current speed is unconfirmed.\n\n{}", "ゲーム速度の復元に失敗しました。現在の速度は未確認です。\n\n{}"],
     value_out_of_range => ["数值超出范围：{} ~ {}", "Value out of range: {} to {}", "値が範囲外です：{} ～ {}"],
 }
 
-pub fn strings(language: Language) -> &'static Strings {
+pub const fn strings(language: Language) -> &'static Strings {
     match language {
         Language::Zh => &ZH,
         Language::En => &EN,
@@ -108,104 +121,94 @@ pub fn strings(language: Language) -> &'static Strings {
     }
 }
 
-// 菜单树里存中文 caption，这里按语言查表。查不到就保留中文。
-macro_rules! nav_labels {
-    ($($zh:literal => [$en:literal, $ja:literal]),* $(,)?) => {
-        pub fn nav_label(language: Language, zh: &'static str) -> &'static str {
-            match language {
-                Language::Zh => zh,
-                Language::En => match zh {
-                    $($zh => $en,)*
-                    _ => zh,
-                },
-                Language::Ja => match zh {
-                    $($zh => $ja,)*
-                    _ => zh,
-                },
-            }
-        }
+pub const fn item_group_label(language: Language, group: ItemGroup) -> &'static str {
+    let (zh, en, ja) = match group {
+        ItemGroup::Drinks => ("茶水类", "Drinks", "お茶"),
+        ItemGroup::Presents => ("礼物类", "Gifts", "プレゼント"),
+        ItemGroup::Books => ("书籍类", "Books", "本"),
+        ItemGroup::HouseholdItems => ("家具类", "Furniture", "家具"),
+        ItemGroup::SexItems => ("H类", "H Items", "H系"),
     };
+    language.pick(zh, en, ja)
 }
 
-nav_labels! {
-    "道具" => ["Items", "アイテム"],
-    "状态" => ["Status", "ステータス"],
-    "帮助" => ["Help", "ヘルプ"],
-    "茶水类" => ["Drinks", "お茶"],
-    "礼物类" => ["Gifts", "プレゼント"],
-    "书籍类" => ["Books", "本"],
-    "家具类" => ["Furniture", "家具"],
-    "H类" => ["H Items", "H系"],
-    "绿茶" => ["Green Tea", "緑茶"],
-    "咖啡" => ["Coffee", "コーヒー"],
-    "红茶" => ["Black Tea", "紅茶"],
-    "安眠茶" => ["Sleep Tea", "安眠茶"],
-    "壮阳茶" => ["Stimulant", "精力剤"],
-    "媚药" => ["Love Potion", "媚薬"],
-    "避孕药" => ["After Pill", "アフターピル"],
-    "零食" => ["Snack", "お菓子"],
-    "礼物" => ["Gift", "プレゼント"],
-    "冒险的书" => ["Adventure Book", "冒険の書"],
-    "色色的书" => ["Naughty Book", "えっちな本"],
-    "小薄本" => ["Thin Book", "薄いブック"],
-    "安眠枕" => ["Soft Pillow", "安眠枕"],
-    "羽毛被" => ["Feather Mattress", "羽毛布団"],
-    "哑铃" => ["Dumbbell", "ダンベル"],
-    "铁木屐" => ["Iron Geta", "鉄下駄"],
-    "安全套" => ["Condom", "コンドーム"],
-    "跳蛋" => ["Vibrator", "バイブ"],
-    "按摩棒" => ["Dildo", "電マ"],
-    "菊穴按摩棒" => ["Anal Dildo", "アナルバイブ"],
-    "触手" => ["Tentacle", "触手"],
-    "时间" => ["Time", "時間"],
-    "日" => ["Day", "日"],
-    "时" => ["Hour", "時"],
-    "分" => ["Minute", "分"],
-    "周" => ["Week", "週"],
-    "周一" => ["Mon", "月"],
-    "周二" => ["Tue", "火"],
-    "周三" => ["Wed", "水"],
-    "周四" => ["Thu", "木"],
-    "周五" => ["Fri", "金"],
-    "周六" => ["Sat", "土"],
-    "周日" => ["Sun", "日"],
-    "方针" => ["Policy", "方針"],
-    "妹妹" => ["Sister", "妹"],
-    "哥哥" => ["Brother", "兄"],
-    "心情" => ["Mood", "機嫌"],
-    "信赖" => ["Trust", "信頼"],
-    "性趣" => ["Interest", "性興味"],
-    "性欲" => ["Lust", "性欲"],
-    "健康" => ["Health", "健康"],
-    "行动力" => ["Energy", "行動力"],
-    "精力" => ["Stamina", "精力"],
-    "金钱" => ["Money", "所持金"],
-    "开始之时" => ["Beginning", "開始時"],
-    "往常的生活" => ["Usual Life", "いつもの生活"],
-    "打工生活" => ["Part-time", "バイト生活"],
-    "便当生活" => ["Bento Life", "お弁当生活"],
-    "节约生活" => ["Frugal Life", "節約生活"],
-    "读书周" => ["Reading", "読書週間"],
-    "肉体改造" => ["Training", "肉体改造"],
-    "大人的阶段" => ["Adult Stage", "大人の階段"],
-    "健康的每一天" => ["Healthy", "健康的な毎日"],
-    "奢侈期" => ["Luxury", "贅沢期"],
-    "禁欲生活" => ["Abstinence", "禁欲生活"],
-    "糜烂生活" => ["Decadent", "糜爛生活"],
-    "烦恼全开" => ["Worries", "悩み全開"],
-    "妹妹生活" => ["Sister Life", "妹生活"],
-    "暑假！" => ["Summer!", "夏休み！"],
-    "合宿！" => ["Camp!", "合宿！"],
-    "妹妹旅行" => ["Sister Trip", "妹旅行"],
-    "哥哥LOVE" => ["Brother LOVE", "お兄ちゃんLOVE"],
-    "很开心" => ["Very Happy", "とても嬉しい"],
-    "普通" => ["Normal", "普通"],
-    "不开心" => ["Unhappy", "不機嫌"],
-    "即将爆炸" => ["About to Burst", "爆発寸前"],
-    "爆炸" => ["Burst", "爆発"],
-    "文档" => ["Documentation", "ドキュメント"],
-    "源码" => ["Source", "ソース"],
-    "关于" => ["About", "このアプリ"],
+pub const fn nav_action_label(language: Language, action: NavAction) -> &'static str {
+    let (zh, en, ja) = match action {
+        NavAction::Documentation => ("文档", "Documentation", "ドキュメント"),
+        NavAction::Repository => ("源码", "Source", "ソース"),
+        NavAction::About => ("关于", "About", "このアプリ"),
+    };
+    language.pick(zh, en, ja)
+}
+
+pub const fn field_label(language: Language, field: FieldId) -> &'static str {
+    let (zh, en, ja) = match field {
+        FieldId::GreenTea => ("绿茶", "Green Tea", "緑茶"),
+        FieldId::Coffee => ("咖啡", "Coffee", "コーヒー"),
+        FieldId::BlackTea => ("红茶", "Black Tea", "紅茶"),
+        FieldId::SleepTea => ("安眠茶", "Sleep Tea", "安眠茶"),
+        FieldId::Stimulant => ("壮阳茶", "Stimulant", "精力剤"),
+        FieldId::LovePotion => ("媚药", "Love Potion", "媚薬"),
+        FieldId::AfterPill => ("避孕药", "After Pill", "アフターピル"),
+        FieldId::Sweets => ("零食", "Snack", "お菓子"),
+        FieldId::Present => ("礼物", "Gift", "プレゼント"),
+        FieldId::AdventureBook => ("冒险的书", "Adventure Book", "冒険の書"),
+        FieldId::NaughtyBook => ("色色的书", "Naughty Book", "えっちな本"),
+        FieldId::Doujinshi => ("小薄本", "Thin Book", "薄いブック"),
+        FieldId::SoftPillow => ("安眠枕", "Soft Pillow", "安眠枕"),
+        FieldId::FeatherMattress => ("羽毛被", "Feather Mattress", "羽毛布団"),
+        FieldId::Dumbbell => ("哑铃", "Dumbbell", "ダンベル"),
+        FieldId::IronSandals => ("铁木屐", "Iron Geta", "鉄下駄"),
+        FieldId::Condom => ("安全套", "Condom", "コンドーム"),
+        FieldId::Vibrator => ("跳蛋", "Vibrator", "バイブ"),
+        FieldId::Dildo => ("按摩棒", "Dildo", "電マ"),
+        FieldId::AnalDildo => ("菊穴按摩棒", "Anal Dildo", "アナルバイブ"),
+        FieldId::Tentacle => ("触手", "Tentacle", "触手"),
+        FieldId::TimeDay => ("日", "Day", "日"),
+        FieldId::TimeHour => ("时", "Hour", "時"),
+        FieldId::TimeMinute => ("分", "Minute", "分"),
+        FieldId::TimeWeek => ("周", "Week", "週"),
+        FieldId::HouseholdPolicy => ("方针", "Policy", "方針"),
+        FieldId::ImoutoInterest => ("心情", "Mood", "機嫌"),
+        FieldId::ImoutoTrust => ("信赖", "Trust", "信頼"),
+        FieldId::ImoutoMood => ("性趣", "Interest", "性興味"),
+        FieldId::ImoutoLust | FieldId::OniichanLust => ("性欲", "Lust", "性欲"),
+        FieldId::ImoutoCondition => ("健康", "Health", "健康"),
+        FieldId::OniichanEnergy => ("行动力", "Energy", "行動力"),
+        FieldId::OniichanStamina => ("精力", "Stamina", "精力"),
+        FieldId::OniichanMoney => ("金钱", "Money", "所持金"),
+    };
+    language.pick(zh, en, ja)
+}
+
+pub const fn option_label(language: Language, field: FieldId, value: i32) -> Option<&'static str> {
+    let (zh, en, ja) = match (field, value) {
+        (FieldId::HouseholdPolicy, 1) => ("开始之时", "Beginning", "開始時"),
+        (FieldId::HouseholdPolicy, 2) => ("往常的生活", "Usual Life", "いつもの生活"),
+        (FieldId::HouseholdPolicy, 3) => ("打工生活", "Part-time", "バイト生活"),
+        (FieldId::HouseholdPolicy, 4) => ("便当生活", "Bento Life", "お弁当生活"),
+        (FieldId::HouseholdPolicy, 5) => ("节约生活", "Frugal Life", "節約生活"),
+        (FieldId::HouseholdPolicy, 6) => ("读书周", "Reading", "読書週間"),
+        (FieldId::HouseholdPolicy, 7) => ("肉体改造", "Training", "肉体改造"),
+        (FieldId::HouseholdPolicy, 8) => ("大人的阶段", "Adult Stage", "大人の階段"),
+        (FieldId::HouseholdPolicy, 9) => ("健康的每一天", "Healthy", "健康的な毎日"),
+        (FieldId::HouseholdPolicy, 10) => ("奢侈期", "Luxury", "贅沢期"),
+        (FieldId::HouseholdPolicy, 11) => ("禁欲生活", "Abstinence", "禁欲生活"),
+        (FieldId::HouseholdPolicy, 12) => ("糜烂生活", "Decadent", "糜爛生活"),
+        (FieldId::HouseholdPolicy, 13) => ("烦恼全开", "Worries", "悩み全開"),
+        (FieldId::HouseholdPolicy, 14) => ("妹妹生活", "Sister Life", "妹生活"),
+        (FieldId::HouseholdPolicy, 15) => ("暑假！", "Summer!", "夏休み！"),
+        (FieldId::HouseholdPolicy, 16) => ("合宿！", "Camp!", "合宿！"),
+        (FieldId::HouseholdPolicy, 17) => ("妹妹旅行", "Sister Trip", "妹旅行"),
+        (FieldId::ImoutoInterest, 10) => ("哥哥LOVE", "Brother LOVE", "お兄ちゃんLOVE"),
+        (FieldId::ImoutoInterest, 8) => ("很开心", "Very Happy", "とても嬉しい"),
+        (FieldId::ImoutoInterest, 6) => ("普通", "Normal", "普通"),
+        (FieldId::ImoutoInterest, 4) => ("不开心", "Unhappy", "不機嫌"),
+        (FieldId::ImoutoInterest, 2) => ("即将爆炸", "About to Burst", "爆発寸前"),
+        (FieldId::ImoutoInterest, 0) => ("爆炸", "Burst", "爆発"),
+        _ => return None,
+    };
+    Some(language.pick(zh, en, ja))
 }
 
 pub fn day_value(language: Language, day: i32) -> String {
@@ -298,19 +301,36 @@ mod tests {
     }
 
     #[test]
-    fn nav_labels_are_translated() {
-        assert_eq!(nav_label(Language::Zh, "道具"), "道具");
-        assert_eq!(nav_label(Language::En, "道具"), "Items");
-        assert_eq!(nav_label(Language::Ja, "道具"), "アイテム");
-        assert_eq!(nav_label(Language::En, "未知"), "未知");
-        assert_eq!(nav_label(Language::En, "媚药"), "Love Potion");
-        assert_eq!(nav_label(Language::En, "小薄本"), "Thin Book");
-        assert_eq!(nav_label(Language::En, "羽毛被"), "Feather Mattress");
-        assert_eq!(nav_label(Language::En, "安眠枕"), "Soft Pillow");
-        assert_eq!(nav_label(Language::Ja, "壮阳茶"), "精力剤");
-        assert_eq!(nav_label(Language::Ja, "按摩棒"), "電マ");
-        assert_eq!(nav_label(Language::En, "性趣"), "Interest");
-        assert_eq!(nav_label(Language::Ja, "心情"), "機嫌");
-        assert_eq!(nav_label(Language::Ja, "性趣"), "性興味");
+    fn all_fields_and_options_have_translations() {
+        assert_eq!(
+            field_label(Language::En, FieldId::LovePotion),
+            "Love Potion"
+        );
+        assert_eq!(field_label(Language::En, FieldId::Doujinshi), "Thin Book");
+        assert_eq!(
+            field_label(Language::En, FieldId::FeatherMattress),
+            "Feather Mattress"
+        );
+        assert_eq!(
+            field_label(Language::En, FieldId::SoftPillow),
+            "Soft Pillow"
+        );
+        assert_eq!(field_label(Language::Ja, FieldId::Stimulant), "精力剤");
+        assert_eq!(field_label(Language::Ja, FieldId::Dildo), "電マ");
+        assert_eq!(field_label(Language::En, FieldId::ImoutoMood), "Interest");
+        assert_eq!(field_label(Language::Ja, FieldId::ImoutoInterest), "機嫌");
+        assert_eq!(field_label(Language::Ja, FieldId::ImoutoMood), "性興味");
+
+        for field in FieldId::ALL {
+            for option in field.options() {
+                for language in Language::ALL {
+                    assert!(
+                        option_label(language, field, option.value).is_some(),
+                        "missing option translation for {field:?} = {}",
+                        option.value
+                    );
+                }
+            }
+        }
     }
 }

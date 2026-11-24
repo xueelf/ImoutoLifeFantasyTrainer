@@ -7,7 +7,7 @@ use windows::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
 };
 
-use crate::config::pointer;
+use crate::config::pointer::FieldId;
 use crate::config::{GAME_PROCESS_NAMES, SINGLE_INSTANCE_PATTERN_OFFSET};
 use crate::services::memory::GameMemory;
 use crate::services::process::GameProcess;
@@ -106,13 +106,13 @@ fn has_game_code(memory: &GameMemory) -> bool {
 
 fn looks_like_game(memory: &GameMemory) -> Result<bool> {
     // 用几组已知范围做弱校验。字段还没初始化时返回 false，调用方会等待重试。
-    let hour = read_path(memory, "status.time.hour")?;
-    let minute = read_path(memory, "status.time.minute")?;
-    let week = read_path(memory, "status.time.week")?;
-    let day = read_path(memory, "status.time.day")?;
-    let green_tea = read_path(memory, "item_list.drinks.green_tea")?;
-    let policy = read_path(memory, "status.household_policy")?;
-    let money = read_path(memory, "status.oniichan.money")?;
+    let hour = read_field(memory, FieldId::TimeHour)?;
+    let minute = read_field(memory, FieldId::TimeMinute)?;
+    let week = read_field(memory, FieldId::TimeWeek)?;
+    let day = read_field(memory, FieldId::TimeDay)?;
+    let green_tea = read_field(memory, FieldId::GreenTea)?;
+    let policy = read_field(memory, FieldId::HouseholdPolicy)?;
+    let money = read_field(memory, FieldId::OniichanMoney)?;
 
     Ok((0..=23).contains(&hour)
         && (0..=59).contains(&minute)
@@ -123,9 +123,8 @@ fn looks_like_game(memory: &GameMemory) -> Result<bool> {
         && money >= 0)
 }
 
-fn read_path(memory: &GameMemory, path: &str) -> Result<i32> {
-    let chain = pointer::lookup(path).with_context(|| format!("未知指针：{path}"))?;
-    memory.read_chain(chain)
+fn read_field(memory: &GameMemory, field: FieldId) -> Result<i32> {
+    memory.read_offset(field.offset())
 }
 
 fn is_game_process(name: &str) -> bool {

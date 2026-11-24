@@ -1,10 +1,8 @@
 //! 顶部菜单、二级面板和菜单交互状态。
 
-use std::collections::HashMap;
-
 use eframe::egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
 
-use crate::config::nav::{NavAction, NavNode};
+use crate::config::pointer::{FieldId, ItemGroup, MenuValues, NavAction};
 use crate::config::{BODY_HEIGHT, HEADER_HEIGHT, MENU_HEIGHT, WINDOW_WIDTH};
 use crate::i18n::{self, Language};
 use crate::ui::theme;
@@ -43,7 +41,7 @@ pub enum MenuTab {
 }
 
 impl MenuTab {
-    fn index(self) -> usize {
+    const fn index(self) -> usize {
         match self {
             Self::Items => 0,
             Self::Status => 1,
@@ -51,20 +49,26 @@ impl MenuTab {
         }
     }
 
-    fn label(self, language: Language) -> &'static str {
-        let zh = match self {
-            Self::Items => "道具",
-            Self::Status => "状态",
-            Self::Help => "帮助",
-        };
-        i18n::nav_label(language, zh)
+    const fn label(self, language: Language) -> &'static str {
+        let text = i18n::strings(language);
+        match self {
+            Self::Items => text.tab_items,
+            Self::Status => text.tab_status,
+            Self::Help => text.tab_help,
+        }
     }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum SelectTarget {
+    Language,
+    Field(FieldId),
 }
 
 pub struct MenuState {
     pub open: Option<MenuTab>,
-    pub open_submenu: Option<String>,
-    pub open_select: Option<String>,
+    pub open_submenu: Option<ItemGroup>,
+    pub open_select: Option<SelectTarget>,
     pub tab_rects: [Rect; 3],
 }
 
@@ -79,17 +83,17 @@ impl Default for MenuState {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum MenuAction {
     Language(Language),
-    Prompt { path: String, caption: &'static str },
-    Check { path: String, checked: bool },
-    Select { path: String, value: i32 },
+    Prompt(FieldId),
+    Check { field: FieldId, checked: bool },
+    Select { field: FieldId, value: i32 },
     Command(NavAction),
 }
 
 mod help;
 mod items;
-mod select;
 mod status;
 mod widgets;
 
@@ -179,8 +183,7 @@ pub fn draw_tabs(
 
 pub fn draw_panels(
     ui: &mut Ui,
-    nav: &[NavNode],
-    values: &HashMap<String, i32>,
+    values: &MenuValues,
     state: &mut MenuState,
     language: Language,
 ) -> Option<MenuAction> {
@@ -197,9 +200,9 @@ pub fn draw_panels(
 
     let mut panels = Vec::new();
     let action = match open {
-        MenuTab::Items => items::draw_items(ui, nav, values, state, &mut panels, language),
-        MenuTab::Status => status::draw_status(ui, nav, values, state, &mut panels, language),
-        MenuTab::Help => help::draw_help(ui, nav, state, &mut panels, language),
+        MenuTab::Items => items::draw_items(ui, values, state, &mut panels, language),
+        MenuTab::Status => status::draw_status(ui, values, state, &mut panels, language),
+        MenuTab::Help => help::draw_help(ui, state, &mut panels, language),
     };
 
     if let Some(panel) = panels.first() {
@@ -248,7 +251,7 @@ pub fn draw_panels(
     }
 
     if let Some(action) = action {
-        match &action {
+        match action {
             MenuAction::Select { .. } | MenuAction::Language(_) => {
                 // 选完下拉项只收起下拉，状态面板继续留着。
                 state.open_select = None;
@@ -259,7 +262,7 @@ pub fn draw_panels(
                 state.open_select = None;
             }
             // 输入/勾选后保持当前菜单和子菜单，方便连续修改。
-            MenuAction::Prompt { .. } | MenuAction::Check { .. } => {}
+            MenuAction::Prompt(_) | MenuAction::Check { .. } => {}
         }
         return Some(action);
     }

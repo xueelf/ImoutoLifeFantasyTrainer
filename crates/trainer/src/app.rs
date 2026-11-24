@@ -4,14 +4,13 @@ use eframe::egui::{
     self, Align2, Color32, FontData, FontDefinitions, FontFamily, FontId, Pos2, Rect, Sense,
     Stroke, TextStyle, TextureHandle, Vec2, ViewportCommand,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crate::config;
 use crate::config::feature::{self, FeatureAction};
-use crate::config::nav::{self, NavAction, NavNode, NavType};
-use crate::config::pointer;
+use crate::config::pointer::{FieldId, MenuValues, NavAction};
 use crate::i18n::{self, Language};
 use crate::services::assets::AssetService;
 use crate::services::hotkeys::HotkeyService;
@@ -58,9 +57,7 @@ pub struct TrainerApp {
     hotkeys: Option<HotkeyService>,
     language: Language,
     features: Vec<FeatureView>,
-    nav: Vec<NavNode>,
-    menu_paths: Vec<String>,
-    menu_values: HashMap<String, i32>,
+    menu_values: MenuValues,
     menu_state: MenuState,
     session: Option<GameSession>,
     unknown_speed_pids: HashSet<u32>,
@@ -96,8 +93,6 @@ impl TrainerApp {
             style.visuals.popup_shadow = egui::epaint::Shadow::NONE;
         });
 
-        let nav = nav::tree();
-        let menu_paths = collect_menu_paths(&nav);
         let features = feature::FEATURES
             .iter()
             .map(|definition| FeatureView {
@@ -134,7 +129,7 @@ impl TrainerApp {
         );
         let splash = SplashState::new(&cc.egui_ctx, &assets);
 
-        let (hotkeys, mut error_dialog) = match HotkeyService::new() {
+        let (hotkeys, error_dialog) = match HotkeyService::new() {
             Ok(service) => {
                 let failed = service
                     .failed()
@@ -154,21 +149,12 @@ impl TrainerApp {
             ),
         };
 
-        if let Some(path) = menu_paths
-            .iter()
-            .find(|path| pointer::lookup(path.as_str()).is_none())
-        {
-            error_dialog = Some(text.missing_pointer.replace("{}", path));
-        }
-
         Self {
             assets,
             hotkeys,
             language,
             features,
-            nav,
-            menu_paths,
-            menu_values: HashMap::new(),
+            menu_values: MenuValues::default(),
             menu_state: MenuState::default(),
             session: None,
             unknown_speed_pids: HashSet::new(),
@@ -347,15 +333,14 @@ impl TrainerApp {
     }
 
     fn refresh_menu_values(&mut self) -> bool {
-        let Some(session) = &self.session else {
+        let Some(values) = self
+            .session
+            .as_ref()
+            .and_then(|session| session.read_menu_values())
+        else {
             return false;
         };
-        let values = session.read_menu_values(&self.menu_paths);
-        // 所有字段都读成功才替换菜单值，避免半套数据让界面跳变。
-        if values.len() != self.menu_paths.len() {
-            return false;
-        }
-        self.menu_values = values.into_iter().collect();
+        self.menu_values = values;
         true
     }
 
@@ -434,24 +419,23 @@ impl TrainerApp {
     fn apply_menu_action(&mut self, ctx: &egui::Context, action: MenuAction) {
         match action {
             MenuAction::Language(language) => self.set_language(ctx, language),
-            MenuAction::Prompt { path, caption } => {
-                let value = self.menu_values.get(&path).copied().unwrap_or(0);
+            MenuAction::Prompt(field) => {
+                let value = self.menu_values.get(field);
                 self.prompt_dialog = Some(PromptState {
-                    caption,
-                    path,
+                    field,
                     value: value.to_string(),
                     error: None,
                 });
             }
-            MenuAction::Check { path, checked } => {
+            MenuAction::Check { field, checked } => {
                 self.write_menu_value(
-                    path,
+                    field,
                     i32::from(checked),
                     if checked { "Enter" } else { "Cancel" },
                 );
             }
-            MenuAction::Select { path, value } => {
-                self.write_menu_value(path, value, "Enter");
+            MenuAction::Select { field, value } => {
+                self.write_menu_value(field, value, "Enter");
             }
             MenuAction::Command(command) => {
                 self.close_menu();
@@ -465,8 +449,8 @@ impl TrainerApp {
         }
     }
 
-    fn write_menu_value(&mut self, path: String, value: i32, sound_name: &str) {
-        let (min, max) = pointer::bounds(&path);
+    fn write_menu_value(&mut self, field: FieldId, value: i32, sound_name: &str) {
+        let (min, max) = field.bounds();
         if !(min..=max).contains(&value) {
             let message = self
                 .text()
@@ -480,19 +464,18 @@ impl TrainerApp {
             return;
         };
         // 游戏里星期由日期决定，单独改周会立刻对不上。这里在写日期时一并算好星期。
-        let week = (path == "status.time.day").then(|| (value.max(1) - 1).rem_euclid(7));
-        let mut result = session.write_chain(&path, value);
+        let week = (field == FieldId::TimeDay).then(|| (value.max(1) - 1).rem_euclid(7));
+        let mut result = session.write_field(field, value);
         if result.is_ok()
             && let Some(week) = week
         {
-            result = session.write_chain("status.time.week", week);
+            result = session.write_field(FieldId::TimeWeek, week);
         }
         match result {
             Ok(()) => {
-                self.menu_values.insert(path, value);
+                self.menu_values.set(field, value);
                 if let Some(week) = week {
-                    self.menu_values
-                        .insert("status.time.week".to_string(), week);
+                    self.menu_values.set(FieldId::TimeWeek, week);
                 }
                 self.play_sound(sound_name);
             }
@@ -872,11 +855,10 @@ impl TrainerApp {
     fn draw_dialogs(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         // 同一时间只显示一个弹窗，按输入、错误、超时、关于的顺序处理。
         if let Some(mut dialog) = self.prompt_dialog.take() {
-            let current = self.menu_values.get(&dialog.path).copied().unwrap_or(0);
+            let current = self.menu_values.get(dialog.field);
             match dialogs::draw_prompt(ui, &mut dialog, current, self.language) {
                 PromptResult::Submit(value) => {
-                    let path = dialog.path.clone();
-                    self.write_menu_value(path, value, "Enter");
+                    self.write_menu_value(dialog.field, value, "Enter");
                 }
                 PromptResult::Cancel => {
                     self.play_sound("Cancel");
@@ -943,13 +925,8 @@ impl eframe::App for TrainerApp {
 
         if self.menu_state.open.is_some()
             && !dialog_open
-            && let Some(action) = menu::draw_panels(
-                ui,
-                &self.nav,
-                &self.menu_values,
-                &mut self.menu_state,
-                self.language,
-            )
+            && let Some(action) =
+                menu::draw_panels(ui, &self.menu_values, &mut self.menu_state, self.language)
         {
             self.apply_menu_action(&ctx, action);
         }
@@ -1015,25 +992,4 @@ fn load_texture(
     let bytes = bytes?;
     let image = assets.load_color_image(bytes).ok()?;
     Some(ctx.load_texture(name, image, egui::TextureOptions::LINEAR))
-}
-
-fn collect_menu_paths(nodes: &[NavNode]) -> Vec<String> {
-    let mut paths = Vec::new();
-    collect_paths_inner(nodes, &mut paths);
-    paths
-}
-
-fn collect_paths_inner(nodes: &[NavNode], paths: &mut Vec<String>) {
-    for node in nodes {
-        // 菜单值只关心可编辑的叶子节点，分组和动作节点不参与轮询。
-        if node.children.is_empty()
-            && matches!(
-                node.kind,
-                NavType::Prompt | NavType::Check | NavType::Select
-            )
-        {
-            paths.push(node.path.clone());
-        }
-        collect_paths_inner(&node.children, paths);
-    }
 }

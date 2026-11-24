@@ -4,14 +4,14 @@ use eframe::egui::{
     self, Align2, Color32, Pos2, Rect, Sense, Stroke, StrokeKind, TextureHandle, Ui, Vec2,
 };
 
+use crate::config::pointer::FieldId;
 use crate::config::{self, VERSION};
 use crate::i18n::{self, Language};
 use crate::services::win32;
 use crate::ui::theme;
 
 pub struct PromptState {
-    pub caption: &'static str,
-    pub path: String,
+    pub field: FieldId,
     pub value: String,
     pub error: Option<String>,
 }
@@ -32,10 +32,11 @@ pub fn draw_prompt(
     draw_scrim(ui, "prompt-scrim");
     let card = Rect::from_min_size(Pos2::new(100.0, 124.0), Vec2::new(360.0, 190.0));
     draw_card(ui, card);
+    let caption = i18n::field_label(language, state.field);
     let close = draw_title(
         ui,
         card,
-        &text.edit_title.replace("{}", state.caption),
+        &text.edit_title.replace("{}", caption),
         "prompt-close",
     );
     let hint = if let Some(error) = &state.error {
