@@ -79,9 +79,8 @@ impl GameSession {
     pub fn shutdown(&mut self) -> Result<()> {
         // 先停止冻结，避免 speedhack 远程调用超时期间继续写内存。
         self.freeze.unlock_all();
-        let result = self.speedhack.disable();
-        self.shutdown_done = result.is_ok();
-        result
+        self.shutdown_done = true;
+        self.speedhack.disable()
     }
 
     pub fn enable_feature(&mut self, action: FeatureAction) -> Result<()> {
