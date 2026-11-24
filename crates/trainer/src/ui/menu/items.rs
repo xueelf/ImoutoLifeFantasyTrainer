@@ -35,7 +35,7 @@ pub(super) fn draw_items(
             ("item-group", index),
         );
         if response.hovered() {
-            theme::screentone(ui.painter(), rect, 6.0, 0.7);
+            theme::screentone(ui.painter(), rect);
         }
         if index + 1 < ItemGroup::ALL.len() {
             theme::list_separator(ui.painter(), rect);
@@ -89,7 +89,7 @@ pub(super) fn draw_items(
                 row_id,
             );
             if response.hovered() {
-                theme::screentone(ui.painter(), rect, 6.0, 0.7);
+                theme::screentone(ui.painter(), rect);
             }
             if index + 1 < fields.len() {
                 theme::list_separator(ui.painter(), rect);

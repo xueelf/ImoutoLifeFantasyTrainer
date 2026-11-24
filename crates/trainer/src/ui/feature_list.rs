@@ -39,7 +39,7 @@ pub fn draw(
         };
 
         if view.is_on {
-            theme::screentone(ui.painter(), row.shrink2(egui::vec2(0.0, 2.0)), 6.0, 0.7);
+            theme::screentone(ui.painter(), row.shrink2(egui::vec2(0.0, 2.0)));
         } else if response.hovered() && interactive {
             ui.painter().rect_filled(
                 row.shrink2(egui::vec2(0.0, 2.0)),

@@ -191,7 +191,7 @@ pub(super) fn draw_status(
         )
         .on_hover_cursor(egui::CursorIcon::PointingHand);
     if response.hovered() {
-        theme::screentone(ui.painter(), policy_row, 6.0, 0.7);
+        theme::screentone(ui.painter(), policy_row);
     }
     let policy_target = SelectTarget::Field(FieldId::HouseholdPolicy);
     if response.clicked() {
@@ -278,7 +278,7 @@ fn draw_time_trigger(
         .interact(rect, ui.scope_id().with(id), Sense::click())
         .on_hover_cursor(egui::CursorIcon::PointingHand);
     if response.hovered() {
-        theme::screentone(ui.painter(), rect, 6.0, 0.7);
+        theme::screentone(ui.painter(), rect);
     }
     if response.clicked() && !field.is_read_only() {
         state.open_select = None;
@@ -355,7 +355,7 @@ fn draw_pair(
     );
     if response.hovered() && enabled {
         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-        theme::screentone(ui.painter(), rect, 6.0, 0.7);
+        theme::screentone(ui.painter(), rect);
     }
     let target = SelectTarget::Field(field);
     if response.clicked() && enabled {

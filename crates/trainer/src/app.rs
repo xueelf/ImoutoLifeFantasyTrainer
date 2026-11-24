@@ -718,7 +718,7 @@ impl TrainerApp {
             center + Vec2::splat(COVER_SHADOW_OFFSET),
             drawn_size,
             angle,
-            theme::shadow(),
+            theme::SHADOW,
             Stroke::NONE,
         );
         theme::rotated_rect(

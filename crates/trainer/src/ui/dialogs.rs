@@ -207,7 +207,7 @@ pub fn draw_about(ui: &mut Ui, icon: Option<&TextureHandle>, language: Language)
                             Sense::click(),
                         );
                         if response.hovered() {
-                            ui.painter().rect_filled(rect, 0.0, theme::screen_tone());
+                            ui.painter().rect_filled(rect, 0.0, theme::SCREEN_TONE);
                         }
                         let font = theme::font(10.0);
                         ui.painter().text(

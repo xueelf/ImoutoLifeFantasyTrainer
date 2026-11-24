@@ -40,7 +40,7 @@ pub(super) fn draw_help(
         ("language", 0),
     );
     if response.hovered() {
-        theme::screentone(ui.painter(), language_rect, 6.0, 0.7);
+        theme::screentone(ui.painter(), language_rect);
     }
     theme::list_separator(ui.painter(), language_rect);
     if response.clicked() {
@@ -67,7 +67,7 @@ pub(super) fn draw_help(
             ("help", index),
         );
         if response.hovered() {
-            theme::screentone(ui.painter(), rect, 6.0, 0.7);
+            theme::screentone(ui.painter(), rect);
         }
         if index + 1 < NavAction::ALL.len() {
             theme::list_separator(ui.painter(), rect);

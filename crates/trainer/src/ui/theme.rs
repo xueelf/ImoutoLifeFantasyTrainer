@@ -11,12 +11,8 @@ pub const MENU_PAPER: Color32 = Color32::from_rgb(255, 253, 248);
 pub const MUTED: Color32 = Color32::from_rgb(111, 106, 96);
 pub const DISABLED: Color32 = Color32::from_rgb(196, 191, 179);
 pub const LINE: Color32 = Color32::from_rgb(215, 211, 200);
-pub fn shadow() -> Color32 {
-    Color32::from_rgba_unmultiplied(27, 27, 27, 45)
-}
-pub fn screen_tone() -> Color32 {
-    Color32::from_rgba_unmultiplied(27, 27, 27, 28)
-}
+pub const SHADOW: Color32 = Color32::from_rgba_unmultiplied_const(27, 27, 27, 45);
+pub const SCREEN_TONE: Color32 = Color32::from_rgba_unmultiplied_const(27, 27, 27, 28);
 
 pub fn list_separator(painter: &Painter, rect: Rect) {
     painter.line_segment(
@@ -44,7 +40,7 @@ pub fn measure(ui: &egui::Ui, text: &str, font: FontId) -> Vec2 {
 
 pub fn panel(painter: &Painter, rect: Rect, radius: f32, offset: Vec2) {
     if offset != Vec2::ZERO {
-        painter.rect_filled(rect.translate(offset), CornerRadius::from(radius), shadow());
+        painter.rect_filled(rect.translate(offset), CornerRadius::from(radius), SHADOW);
     }
     painter.rect(
         rect,
@@ -70,16 +66,18 @@ pub fn wobbly_oval(painter: &Painter, rect: Rect, stroke: Stroke, seed: f32) {
     painter.add(Shape::closed_line(points, stroke));
 }
 
-pub fn screentone(painter: &Painter, rect: Rect, spacing: f32, radius: f32) {
-    // 用规则网点模拟漫画网点纸，间距越小越密。
-    let mut y = rect.top() + spacing * 0.5;
+pub fn screentone(painter: &Painter, rect: Rect) {
+    // 用规则网点模拟漫画网点纸。
+    const SPACING: f32 = 6.0;
+    const RADIUS: f32 = 0.7;
+    let mut y = rect.top() + SPACING * 0.5;
     while y < rect.bottom() {
-        let mut x = rect.left() + spacing * 0.5;
+        let mut x = rect.left() + SPACING * 0.5;
         while x < rect.right() {
-            painter.circle_filled(Pos2::new(x, y), radius, screen_tone());
-            x += spacing;
+            painter.circle_filled(Pos2::new(x, y), RADIUS, SCREEN_TONE);
+            x += SPACING;
         }
-        y += spacing;
+        y += SPACING;
     }
 }
 
