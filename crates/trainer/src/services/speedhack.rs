@@ -124,11 +124,19 @@ impl SpeedhackService {
             self.remote_module = module;
 
             let watchdog = self.create_watchdog_handle()?;
-            let setup_result = self.remote_call(
+            let setup_result = match self.remote_call(
                 module.wrapping_add(setup_rva),
                 watchdog as usize as *const c_void,
                 &mut setup_may_still_run,
-            )?;
+            ) {
+                Ok(result) => result,
+                Err(error) => {
+                    if !setup_may_still_run {
+                        self.close_remote_handle(watchdog);
+                    }
+                    return Err(error);
+                }
+            };
             let session = setup_result as i32;
             if session <= 0 {
                 bail!("Speedhack DLL 初始化失败");
@@ -217,6 +225,26 @@ impl SpeedhackService {
         let _ = unsafe { CloseHandle(self_handle) };
         duplicated.context("无法为游戏进程创建看门狗句柄")?;
         Ok(remote.0 as usize as u32)
+    }
+
+    fn close_remote_handle(&self, handle: u32) {
+        if handle == 0 {
+            return;
+        }
+        // CreateRemoteThread 失败时 Setup 根本没有启动，需要由修改器收回复制到目标进程的句柄。
+        // DUPLICATE_CLOSE_SOURCE (1) 会直接关闭源进程（此处即游戏进程）中的句柄。
+        // SAFETY: self.process_handle 有 PROCESS_DUP_HANDLE 权限，handle 是刚复制进去的有效句柄。
+        let _ = unsafe {
+            DuplicateHandle(
+                self.process_handle,
+                HANDLE(handle as usize as *mut c_void),
+                HANDLE::default(),
+                std::ptr::null_mut(),
+                0,
+                false,
+                DUPLICATE_HANDLE_OPTIONS(1),
+            )
+        };
     }
 
     fn allocate(&self, size: usize) -> Result<*mut c_void> {
