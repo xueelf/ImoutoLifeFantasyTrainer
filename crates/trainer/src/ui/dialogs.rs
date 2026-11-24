@@ -260,92 +260,100 @@ pub fn draw_about(ui: &mut Ui, icon: Option<&TextureHandle>, language: Language)
         true,
         ui.scope_id().with("about-confirm"),
     );
-    close || button.clicked()
+    let dismiss = ui
+        .input(|input| input.key_pressed(egui::Key::Escape) || input.key_pressed(egui::Key::Enter));
+    close || button.clicked() || dismiss
 }
 
 pub fn draw_error(ui: &mut Ui, message: &str, language: Language) -> bool {
     let text = i18n::strings(language);
-    draw_scrim(ui, "error-scrim");
-    let card = Rect::from_min_size(Pos2::new(100.0, 124.0), Vec2::new(360.0, 190.0));
-    draw_card(ui, card);
-    let close = draw_title(ui, card, text.notice, "error-close");
-
-    let warning = Pos2::new(card.left() + 34.0, card.top() + 80.0);
-    ui.painter()
-        .circle_stroke(warning, 18.0, Stroke::new(2.0, theme::INK));
-    ui.painter().text(
-        warning,
-        Align2::CENTER_CENTER,
-        "!",
-        theme::mono(16.0),
-        theme::INK,
-    );
-    ui.painter().text(
-        Pos2::new(card.left() + 62.0, card.top() + 56.0),
-        Align2::LEFT_TOP,
-        text.error_prefix,
-        theme::font(12.0),
-        theme::INK,
-    );
-    ui.put(
-        Rect::from_min_max(
-            Pos2::new(card.left() + 62.0, card.top() + 74.0),
-            Pos2::new(card.right() - 20.0, card.top() + 116.0),
-        ),
-        egui::Label::new(
-            egui::RichText::new(message)
-                .font(theme::font(10.0))
-                .color(theme::MUTED),
-        )
-        .wrap(),
-    );
-
-    let button = theme::button(
+    draw_notice_shell(
         ui,
-        Rect::from_min_size(
-            Pos2::new(card.right() - 94.0, card.top() + 142.0),
-            Vec2::new(76.0, 30.0),
-        ),
-        text.ok,
-        true,
-        ui.scope_id().with("error-confirm"),
-    );
-    close || button.clicked()
+        language,
+        "error",
+        text.error_prefix,
+        |ui, icon_center| {
+            ui.painter().text(
+                icon_center,
+                Align2::CENTER_CENTER,
+                "!",
+                theme::mono(16.0),
+                theme::INK,
+            );
+        },
+        |ui, card| {
+            ui.put(
+                Rect::from_min_max(
+                    Pos2::new(card.left() + 62.0, card.top() + 74.0),
+                    Pos2::new(card.right() - 20.0, card.top() + 116.0),
+                ),
+                egui::Label::new(
+                    egui::RichText::new(message)
+                        .font(theme::font(10.0))
+                        .color(theme::MUTED),
+                )
+                .wrap(),
+            );
+        },
+    )
 }
 
 pub fn draw_timeout(ui: &mut Ui, language: Language) -> bool {
     let text = i18n::strings(language);
-    draw_scrim(ui, "timeout-scrim");
+    draw_notice_shell(
+        ui,
+        language,
+        "timeout",
+        text.timeout_message,
+        |ui, icon_center| {
+            ui.painter().line_segment(
+                [icon_center, icon_center + Vec2::new(0.0, -12.0)],
+                Stroke::new(2.0, theme::INK),
+            );
+            ui.painter().line_segment(
+                [icon_center, icon_center + Vec2::new(8.0, 4.0)],
+                Stroke::new(2.0, theme::INK),
+            );
+        },
+        |ui, card| {
+            ui.painter().text(
+                Pos2::new(card.left() + 62.0, card.top() + 80.0),
+                Align2::LEFT_TOP,
+                text.timeout_hint,
+                theme::font(10.0),
+                theme::MUTED,
+            );
+        },
+    )
+}
+
+fn draw_notice_shell(
+    ui: &mut Ui,
+    language: Language,
+    id_prefix: &str,
+    heading: &str,
+    draw_icon: impl FnOnce(&mut Ui, Pos2),
+    draw_body: impl FnOnce(&mut Ui, Rect),
+) -> bool {
+    let text = i18n::strings(language);
+    draw_scrim(ui, &format!("{id_prefix}-scrim"));
     let card = Rect::from_min_size(Pos2::new(100.0, 124.0), Vec2::new(360.0, 190.0));
     draw_card(ui, card);
-    let close = draw_title(ui, card, text.notice, "timeout-close");
+    let close = draw_title(ui, card, text.notice, &format!("{id_prefix}-close"));
 
-    let center = Pos2::new(card.left() + 34.0, card.top() + 80.0);
+    let icon_center = Pos2::new(card.left() + 34.0, card.top() + 80.0);
     ui.painter()
-        .circle_stroke(center, 18.0, Stroke::new(2.0, theme::INK));
-    ui.painter().line_segment(
-        [center, center + Vec2::new(0.0, -12.0)],
-        Stroke::new(2.0, theme::INK),
-    );
-    ui.painter().line_segment(
-        [center, center + Vec2::new(8.0, 4.0)],
-        Stroke::new(2.0, theme::INK),
-    );
+        .circle_stroke(icon_center, 18.0, Stroke::new(2.0, theme::INK));
+    draw_icon(ui, icon_center);
 
     ui.painter().text(
         Pos2::new(card.left() + 62.0, card.top() + 56.0),
         Align2::LEFT_TOP,
-        text.timeout_message,
+        heading,
         theme::font(12.0),
         theme::INK,
     );
-    ui.painter().text(
-        Pos2::new(card.left() + 62.0, card.top() + 80.0),
-        Align2::LEFT_TOP,
-        text.timeout_hint,
-        theme::font(10.0),
-        theme::MUTED,
-    );
+    draw_body(ui, card);
 
     let button = theme::button(
         ui,
@@ -355,9 +363,11 @@ pub fn draw_timeout(ui: &mut Ui, language: Language) -> bool {
         ),
         text.ok,
         true,
-        ui.scope_id().with("timeout-confirm"),
+        ui.scope_id().with((id_prefix, "confirm")),
     );
-    close || button.clicked()
+    let dismiss = ui
+        .input(|input| input.key_pressed(egui::Key::Escape) || input.key_pressed(egui::Key::Enter));
+    close || button.clicked() || dismiss
 }
 
 fn draw_scrim(ui: &mut Ui, id: &str) {
