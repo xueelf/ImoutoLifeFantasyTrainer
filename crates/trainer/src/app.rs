@@ -689,13 +689,22 @@ impl TrainerApp {
         let center = COVER_CENTER;
         let cover_size = Vec2::new(config::COVER_WIDTH, config::COVER_HEIGHT);
         let hit = Rect::from_center_size(center, cover_size);
-        let response = ui.interact(hit, ui.scope_id().with("cover"), Sense::click());
         let can_cycle = self.cover_name != Some(config::COVER_PLACEHOLDER);
-        if response.hovered() && can_cycle {
+        let interactive = can_cycle && !self.dialog_open() && self.menu_state.open.is_none();
+        let response = ui.interact(
+            hit,
+            ui.scope_id().with("cover"),
+            if interactive {
+                Sense::click()
+            } else {
+                Sense::hover()
+            },
+        );
+        let hovered = response.hovered() && interactive;
+        if hovered {
             ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
         }
-        if response.clicked() && can_cycle && !self.dialog_open() && self.menu_state.open.is_none()
-        {
+        if response.clicked() && interactive {
             let ctx = ui.ctx().clone();
             self.cycle_cover(&ctx);
         }
@@ -714,7 +723,7 @@ impl TrainerApp {
         let angle = COVER_ANGLE_DEG.to_radians() + wobble;
         let drawn_size = Vec2::new(cover_size.x * squash, cover_size.y);
 
-        if response.hovered() {
+        if hovered {
             theme::rotated_rect(
                 ui.painter(),
                 center,
@@ -738,7 +747,7 @@ impl TrainerApp {
             drawn_size,
             angle,
             Color32::WHITE,
-            Stroke::new(if response.hovered() { 2.0 } else { 1.5 }, theme::INK),
+            Stroke::new(if hovered { 2.0 } else { 1.5 }, theme::INK),
         );
         if let Some(texture) = &self.cover_texture {
             theme::rotated_texture(
@@ -919,10 +928,12 @@ impl eframe::App for TrainerApp {
         }
 
         self.draw_header(ui);
+        let dialog_open = self.dialog_open();
         menu::draw_tabs(
             ui,
             &mut self.menu_state,
             self.session.is_some(),
+            !dialog_open,
             self.language,
         );
         self.draw_cover(ui);
@@ -930,7 +941,7 @@ impl eframe::App for TrainerApp {
         self.draw_footer(ui);
 
         if self.menu_state.open.is_some()
-            && !self.dialog_open()
+            && !dialog_open
             && let Some(action) = menu::draw_panels(
                 ui,
                 &self.nav,

@@ -159,6 +159,7 @@ pub(crate) fn option_row(
         if enabled { theme::INK } else { theme::MUTED },
     );
     if response.hovered() && enabled {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
         theme::screentone(ui.painter(), rect, 6.0, 0.7);
     }
     response

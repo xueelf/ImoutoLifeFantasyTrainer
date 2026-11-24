@@ -93,7 +93,13 @@ mod select;
 mod status;
 mod widgets;
 
-pub fn draw_tabs(ui: &mut Ui, state: &mut MenuState, attached: bool, language: Language) {
+pub fn draw_tabs(
+    ui: &mut Ui,
+    state: &mut MenuState,
+    attached: bool,
+    interactive: bool,
+    language: Language,
+) {
     let labels = [MenuTab::Items, MenuTab::Status, MenuTab::Help];
     let font = theme::font(if language == Language::Ja { 12.0 } else { 14.0 });
     let widths = labels.map(|tab| theme::measure(ui, tab.label(language), font.clone()).x);
@@ -112,26 +118,31 @@ pub fn draw_tabs(ui: &mut Ui, state: &mut MenuState, attached: bool, language: L
         let rect = Rect::from_min_size(egui::pos2(x, y), Vec2::new(width, MENU_ROW_HEIGHT));
         state.tab_rects[index] = rect;
         let enabled = attached || tab == MenuTab::Help;
+        let can_interact = enabled && interactive;
         let response = ui.interact(
             rect,
             ui.scope_id().with(("menu-tab", index)),
-            if enabled {
+            if can_interact {
                 Sense::click()
             } else {
                 Sense::hover()
             },
         );
+        let hovered = response.hovered() && can_interact;
+        if hovered {
+            ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+        }
 
         let active = state.open == Some(tab);
         let color = if !enabled {
             theme::DISABLED
-        } else if active || response.hovered() {
+        } else if active || hovered {
             theme::INK
         } else {
             theme::MUTED
         };
 
-        if response.hovered() && enabled && !active {
+        if hovered && !active {
             ui.painter().line_segment(
                 [rect.left_bottom(), rect.right_bottom()],
                 Stroke::new(1.0, theme::LINE),
@@ -153,16 +164,14 @@ pub fn draw_tabs(ui: &mut Ui, state: &mut MenuState, attached: bool, language: L
             color,
         );
 
-        if response.clicked() && enabled {
+        if response.clicked() && can_interact {
             if state.open == Some(tab) {
                 state.open = None;
-                state.open_submenu = None;
-                state.open_select = None;
             } else {
                 state.open = Some(tab);
-                state.open_submenu = None;
-                state.open_select = None;
             }
+            state.open_submenu = None;
+            state.open_select = None;
         }
         x = rect.right() + pad;
     }
