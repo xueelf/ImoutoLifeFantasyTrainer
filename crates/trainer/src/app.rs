@@ -358,9 +358,11 @@ impl TrainerApp {
         if let Some(session) = &self.session {
             session.unlock_all();
         }
-        let message = self.text().write_error.replace("{}", &error);
-        self.set_error(message);
-        // 冻结线程只会上报第一条写入错误。变速由 speedhack 自己管理状态，不在这里关闭。
+        // freeze_loop 的错误可能来自读取 root，也可能来自写入字段。
+        // 错误信息本身已经包含「读取游戏内存失败」或「写入游戏内存失败」的上下文，
+        // 直接显示即可。
+        self.set_error(error);
+        // 冻结线程只会上报第一条错误。变速由 speedhack 自己管理状态，不在这里关闭。
         for feature in &mut self.features {
             if feature.definition.action != FeatureAction::TripleSpeed {
                 feature.is_on = false;
