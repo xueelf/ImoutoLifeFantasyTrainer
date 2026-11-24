@@ -4,6 +4,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use std::ffi::c_void;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use windows::Win32::Foundation::{
     CloseHandle, DUPLICATE_HANDLE_OPTIONS, DuplicateHandle, FreeLibrary, HANDLE, WAIT_OBJECT_0,
     WAIT_TIMEOUT,
@@ -28,6 +29,7 @@ const REMOTE_TIMEOUT_MS: u32 = 10_000;
 const SPEED_REQUEST_SIZE: usize = 8;
 
 static SPEEDHACK_DLL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/speedhack.dll"));
+static EXPORT_OFFSETS: OnceLock<(u32, u32)> = OnceLock::new();
 
 pub struct SpeedhackService {
     process_handle: HANDLE,
@@ -85,7 +87,7 @@ impl SpeedhackService {
 
         // 注入顺序：释放 DLL 到临时目录，在游戏里加载它，复制看门狗句柄，再调用 Setup。
         let dll_path = ensure_dll()?;
-        let (setup_rva, set_speed_rva) = load_export_offsets(&dll_path)?;
+        let (setup_rva, set_speed_rva) = export_offsets(&dll_path)?;
 
         let path_text = dll_path
             .to_str()
@@ -356,6 +358,15 @@ fn ensure_dll() -> Result<PathBuf> {
         fs::write(&path, SPEEDHACK_DLL).context("无法释放 Speedhack DLL")?;
     }
     Ok(path)
+}
+
+fn export_offsets(dll_path: &std::path::Path) -> Result<(u32, u32)> {
+    if let Some(offsets) = EXPORT_OFFSETS.get() {
+        return Ok(*offsets);
+    }
+    let offsets = load_export_offsets(dll_path)?;
+    let _ = EXPORT_OFFSETS.set(offsets);
+    Ok(offsets)
 }
 
 fn load_export_offsets(dll_path: &std::path::Path) -> Result<(u32, u32)> {
