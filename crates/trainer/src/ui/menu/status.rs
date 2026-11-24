@@ -91,11 +91,14 @@ pub(super) fn draw_status(
     dotted_underline(ui, day_x, day_x + day_width, value_y + 22.0);
     let day_rect =
         Rect::from_min_size(egui::pos2(day_x, label_y - 2.0), Vec2::new(col_width, 44.0));
-    let response = ui.interact(day_rect, ui.scope_id().with("status-day"), Sense::click());
+    let response = ui
+        .interact(day_rect, ui.scope_id().with("status-day"), Sense::click())
+        .on_hover_cursor(egui::CursorIcon::PointingHand);
     if response.hovered() {
         theme::screentone(ui.painter(), day_rect, 6.0, 0.7);
     }
     if response.clicked() && !day.read_only {
+        state.open_select = None;
         return Some(MenuAction::Prompt {
             path: day.path.clone(),
             caption: i18n::nav_label(language, day.caption),
@@ -141,11 +144,14 @@ pub(super) fn draw_status(
         egui::pos2(time_x, label_y - 2.0),
         Vec2::new(hour_width + 4.0, 40.0),
     );
-    let response = ui.interact(hour_rect, ui.scope_id().with("status-hour"), Sense::click());
+    let response = ui
+        .interact(hour_rect, ui.scope_id().with("status-hour"), Sense::click())
+        .on_hover_cursor(egui::CursorIcon::PointingHand);
     if response.hovered() {
         theme::screentone(ui.painter(), hour_rect, 6.0, 0.7);
     }
     if response.clicked() && !hour.read_only {
+        state.open_select = None;
         return Some(MenuAction::Prompt {
             path: hour.path.clone(),
             caption: i18n::nav_label(language, hour.caption),
@@ -155,15 +161,18 @@ pub(super) fn draw_status(
         egui::pos2(minute_x, label_y - 2.0),
         Vec2::new(minute_width + 4.0, 40.0),
     );
-    let response = ui.interact(
-        minute_rect,
-        ui.scope_id().with("status-minute"),
-        Sense::click(),
-    );
+    let response = ui
+        .interact(
+            minute_rect,
+            ui.scope_id().with("status-minute"),
+            Sense::click(),
+        )
+        .on_hover_cursor(egui::CursorIcon::PointingHand);
     if response.hovered() {
         theme::screentone(ui.painter(), minute_rect, 6.0, 0.7);
     }
     if response.clicked() && !minute.read_only {
+        state.open_select = None;
         return Some(MenuAction::Prompt {
             path: minute.path.clone(),
             caption: i18n::nav_label(language, minute.caption),
@@ -206,16 +215,21 @@ pub(super) fn draw_status(
             &format!("{value} ▾"),
             theme::INK,
         );
-        let response = ui.interact(row, ui.scope_id().with("status-policy"), Sense::click());
+        let response = ui
+            .interact(row, ui.scope_id().with("status-policy"), Sense::click())
+            .on_hover_cursor(egui::CursorIcon::PointingHand);
         if response.hovered() {
             theme::screentone(ui.painter(), row, 6.0, 0.7);
         }
-        if state.open_select.as_deref() == Some(policy.path.as_str()) {
-            select_anchor = Some(row);
-        }
         if response.clicked() && !policy.read_only {
-            state.open_select = Some(policy.path.clone());
-            state.open_submenu = None;
+            if state.open_select.as_deref() == Some(policy.path.as_str()) {
+                state.open_select = None;
+            } else {
+                state.open_select = Some(policy.path.clone());
+                state.open_submenu = None;
+            }
+        }
+        if state.open_select.as_deref() == Some(policy.path.as_str()) {
             select_anchor = Some(row);
         }
     }
@@ -351,22 +365,27 @@ fn draw_pair(
         if enabled { theme::INK } else { theme::MUTED },
     );
     if response.hovered() && enabled {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
         theme::screentone(ui.painter(), rect, 6.0, 0.7);
-    }
-    if state.open_select.as_deref() == Some(node.path.as_str()) {
-        *select_anchor = Some(rect);
     }
     if response.clicked() && enabled {
         if is_select {
-            state.open_select = Some(node.path.clone());
-            state.open_submenu = None;
-            *select_anchor = Some(rect);
+            if state.open_select.as_deref() == Some(node.path.as_str()) {
+                state.open_select = None;
+            } else {
+                state.open_select = Some(node.path.clone());
+                state.open_submenu = None;
+            }
         } else {
+            state.open_select = None;
             return Some(MenuAction::Prompt {
                 path: node.path.clone(),
                 caption: i18n::nav_label(language, node.caption),
             });
         }
+    }
+    if state.open_select.as_deref() == Some(node.path.as_str()) {
+        *select_anchor = Some(rect);
     }
     None
 }
