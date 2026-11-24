@@ -257,7 +257,7 @@ impl TrainerApp {
             self.detach(ctx);
             return;
         };
-        if !game.ready {
+        let Some(values) = game.values else {
             // 给游戏一点时间初始化字段。等太久就收起动画，显示读取提示。
             if self.game_wait_started.is_none() {
                 self.game_wait_started = Some(Instant::now());
@@ -270,18 +270,16 @@ impl TrainerApp {
             }
             self.detach(ctx);
             return;
-        }
+        };
 
         if self
             .session
             .as_ref()
             .is_some_and(|session| session.pid() == game.process.pid)
         {
-            // 游戏没换进程时只刷新菜单值，读失败就重新附加。
+            // 游戏没换进程时直接采用本次扫描读到的菜单值快照。
             self.game_wait_started = None;
-            if !self.refresh_menu_values() {
-                self.detach(ctx);
-            }
+            self.menu_values = values;
             return;
         }
 
@@ -289,6 +287,7 @@ impl TrainerApp {
         self.detach(ctx);
         let speed_unknown = self.unknown_speed_pids.contains(&game.process.pid);
         self.session = Some(GameSession::new(game.process, speed_unknown));
+        self.menu_values = values;
         self.game_wait_started = None;
         self.splash.stop();
         self.close_menu();
@@ -298,9 +297,6 @@ impl TrainerApp {
         }
         self.load_random_cover(ctx);
         self.play_intro_sound();
-        if !self.refresh_menu_values() {
-            self.detach(ctx);
-        }
     }
 
     fn detach(&mut self, ctx: &egui::Context) {
@@ -330,18 +326,6 @@ impl TrainerApp {
                 .replace("{}", &error.to_string());
             self.set_error(message);
         }
-    }
-
-    fn refresh_menu_values(&mut self) -> bool {
-        let Some(values) = self
-            .session
-            .as_ref()
-            .and_then(|session| session.read_menu_values())
-        else {
-            return false;
-        };
-        self.menu_values = values;
-        true
     }
 
     fn handle_freeze_error(&mut self) {

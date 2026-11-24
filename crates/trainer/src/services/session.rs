@@ -4,8 +4,7 @@ use anyhow::{Result, bail};
 
 use crate::config::feature::FeatureAction;
 use crate::config::pointer::{
-    BATTLE_SCORE_OFFSET, BATTLE_WINNER_OFFSET, FieldId, HAD_TEA_OFFSET, MenuValues,
-    TOOK_BATH_OFFSET,
+    BATTLE_SCORE_OFFSET, BATTLE_WINNER_OFFSET, FieldId, HAD_TEA_OFFSET, TOOK_BATH_OFFSET,
 };
 use crate::services::freeze::FreezeService;
 use crate::services::memory::GameMemory;
@@ -55,15 +54,6 @@ impl GameSession {
 
     pub fn take_freeze_error(&self) -> Option<String> {
         self.freeze.take_error()
-    }
-
-    pub fn read_menu_values(&self) -> Option<MenuValues> {
-        let mut values = MenuValues::default();
-        for field in FieldId::ALL {
-            let value = self.memory.read_offset(field.offset()).ok()?;
-            values.set(field, value);
-        }
-        Some(values)
     }
 
     pub fn write_field(&self, field: FieldId, value: i32) -> Result<()> {
@@ -123,6 +113,7 @@ impl GameSession {
 
     fn lock_time(&self) -> Result<()> {
         // 先读取四项当前值，再逐项加锁。任一项失败就回滚已锁字段，避免只停了一半时间。
+        let root = self.memory.resolve_root()?;
         let fields = [
             FieldId::TimeDay,
             FieldId::TimeHour,
@@ -132,7 +123,7 @@ impl GameSession {
         let mut locked = [(0u32, 0i32); 4];
         for (slot, field) in locked.iter_mut().zip(fields) {
             let offset = field.offset();
-            *slot = (offset, self.memory.read_offset(offset)?);
+            *slot = (offset, self.memory.read_at_root(root, offset)?);
         }
 
         for (done, (offset, value)) in locked.into_iter().enumerate() {
@@ -149,7 +140,7 @@ impl GameSession {
 
 impl Drop for GameSession {
     fn drop(&mut self) {
-        // shutdown 失败或未调用时，至少尝试恢复速度。冻结总是先解锁。
+        // shutdown 未调用时，至少尝试恢复速度。冻结总是先解锁。
         self.freeze.unlock_all();
         if !self.shutdown_done {
             let _ = self.speedhack.disable();

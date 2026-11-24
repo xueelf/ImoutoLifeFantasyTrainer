@@ -5,6 +5,9 @@ pub const BATTLE_SCORE_OFFSET: u32 = 0x74;
 pub const TOOK_BATH_OFFSET: u32 = 0x118;
 pub const HAD_TEA_OFFSET: u32 = 0x124;
 
+/// 覆盖全部 35 个菜单字段（最大偏移 0x480 + 4 字节）的连续读取块大小。
+pub const MENU_BLOCK_SIZE: usize = 0x484;
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum NavAction {
     Documentation,
@@ -335,6 +338,32 @@ impl Default for MenuValues {
 }
 
 impl MenuValues {
+    pub fn from_root_block(block: &[u8; MENU_BLOCK_SIZE]) -> Self {
+        let mut values = Self::default();
+        for field in FieldId::ALL {
+            let offset = field.offset() as usize;
+            let raw = [
+                block[offset],
+                block[offset + 1],
+                block[offset + 2],
+                block[offset + 3],
+            ];
+            values.set(field, i32::from_le_bytes(raw));
+        }
+        values
+    }
+
+    /// 用几组已知范围做弱校验。字段还没初始化时返回 false，调用方会等待重试。
+    pub fn is_valid_game_state(&self) -> bool {
+        (0..=23).contains(&self.get(FieldId::TimeHour))
+            && (0..=59).contains(&self.get(FieldId::TimeMinute))
+            && (0..=6).contains(&self.get(FieldId::TimeWeek))
+            && (0..1_000_000).contains(&self.get(FieldId::TimeDay))
+            && (0..100_000).contains(&self.get(FieldId::GreenTea))
+            && (0..=17).contains(&self.get(FieldId::HouseholdPolicy))
+            && self.get(FieldId::OniichanMoney) >= 0
+    }
+
     pub const fn get(&self, field: FieldId) -> i32 {
         self.0[field.index()]
     }
@@ -358,6 +387,7 @@ mod tests {
         let mut offsets = HashSet::new();
         for (index, field) in FieldId::ALL.into_iter().enumerate() {
             assert_eq!(field.index(), index);
+            assert!((field.offset() as usize) + 4 <= MENU_BLOCK_SIZE);
             assert!(
                 offsets.insert(field.offset()),
                 "duplicate offset for {field:?}"
@@ -367,11 +397,23 @@ mod tests {
 
     #[test]
     fn bounds_stay_inside_probe_validation() {
-        assert_eq!(FieldId::TimeDay.bounds(), (1, 999_999));
-        assert_eq!(FieldId::TimeHour.bounds(), (0, 23));
-        assert_eq!(FieldId::TimeMinute.bounds(), (0, 59));
-        assert_eq!(FieldId::TimeWeek.bounds(), (0, 6));
-        assert_eq!(FieldId::OniichanMoney.bounds().0, 0);
-        assert_eq!(FieldId::GreenTea.bounds(), (0, 99_999));
+        let mut base = MenuValues::default();
+        base.set(FieldId::TimeDay, 1);
+        base.set(FieldId::HouseholdPolicy, 1);
+        assert!(base.is_valid_game_state());
+
+        for field in FieldId::ALL {
+            let (min, max) = field.bounds();
+            let mut low = base;
+            low.set(field, min);
+            assert!(low.is_valid_game_state(), "min bound invalid for {field:?}");
+
+            let mut high = base;
+            high.set(field, max);
+            assert!(
+                high.is_valid_game_state(),
+                "max bound invalid for {field:?}"
+            );
+        }
     }
 }

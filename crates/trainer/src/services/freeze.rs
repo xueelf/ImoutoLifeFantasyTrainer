@@ -142,10 +142,19 @@ fn freeze_loop(
         }
 
         let mut failed = None;
-        for entry in entries.iter() {
-            if let Err(write_error) = memory.write_offset(entry.field_offset, entry.value) {
-                failed = Some(write_error.to_string());
-                break;
+        match memory.resolve_root() {
+            Ok(root) => {
+                for entry in entries.iter() {
+                    if let Err(write_error) =
+                        memory.write_at_root(root, entry.field_offset, entry.value)
+                    {
+                        failed = Some(write_error.to_string());
+                        break;
+                    }
+                }
+            }
+            Err(read_error) => {
+                failed = Some(read_error.to_string());
             }
         }
         if let Some(message) = failed {

@@ -7,17 +7,17 @@ use windows::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
 };
 
-use crate::config::pointer::FieldId;
+use crate::config::pointer::MenuValues;
 use crate::config::{GAME_PROCESS_NAMES, SINGLE_INSTANCE_PATTERN_OFFSET};
 use crate::services::memory::GameMemory;
 use crate::services::process::GameProcess;
 use crate::services::win32::from_wide;
 
 /// 通过了 exe 代码特征检查的进程。
-/// ready 表示已知内存字段当前也读得出正常值。
+/// `values` 为 `Some` 表示已知内存字段当前已初始化且读得出正常值。
 pub struct FoundGame {
     pub process: GameProcess,
-    pub ready: bool,
+    pub values: Option<MenuValues>,
 }
 
 pub fn find_games() -> Result<Vec<FoundGame>> {
@@ -81,17 +81,21 @@ fn inspect(process: GameProcess) -> Option<FoundGame> {
         return None;
     }
 
-    let ready = looks_like_game(&memory).unwrap_or(false);
-    Some(FoundGame { process, ready })
+    let values = memory
+        .read_menu_values()
+        .ok()
+        .filter(MenuValues::is_valid_game_state);
+    Some(FoundGame { process, values })
 }
 
 fn has_game_code(memory: &GameMemory) -> bool {
     let address = memory
         .module_base()
         .wrapping_add(SINGLE_INSTANCE_PATTERN_OFFSET);
-    let Ok(bytes) = memory.read_bytes(address, 15) else {
+    let mut bytes = [0u8; 15];
+    if memory.read_into(address, &mut bytes).is_err() {
         return false;
-    };
+    }
 
     // 匹配 WOLF 单实例检查开头的 push 0 / push imm32 / call / test eax,eax / je。
     // 不依赖完整函数，只要这几个字节还在就能认出版本。
@@ -102,29 +106,6 @@ fn has_game_code(memory: &GameMemory) -> bool {
         && bytes[12] == 0x85
         && bytes[13] == 0xC0
         && bytes[14] == 0x74
-}
-
-fn looks_like_game(memory: &GameMemory) -> Result<bool> {
-    // 用几组已知范围做弱校验。字段还没初始化时返回 false，调用方会等待重试。
-    let hour = read_field(memory, FieldId::TimeHour)?;
-    let minute = read_field(memory, FieldId::TimeMinute)?;
-    let week = read_field(memory, FieldId::TimeWeek)?;
-    let day = read_field(memory, FieldId::TimeDay)?;
-    let green_tea = read_field(memory, FieldId::GreenTea)?;
-    let policy = read_field(memory, FieldId::HouseholdPolicy)?;
-    let money = read_field(memory, FieldId::OniichanMoney)?;
-
-    Ok((0..=23).contains(&hour)
-        && (0..=59).contains(&minute)
-        && (0..=6).contains(&week)
-        && (0..1_000_000).contains(&day)
-        && (0..100_000).contains(&green_tea)
-        && (0..=17).contains(&policy)
-        && money >= 0)
-}
-
-fn read_field(memory: &GameMemory, field: FieldId) -> Result<i32> {
-    memory.read_offset(field.offset())
 }
 
 fn is_game_process(name: &str) -> bool {
