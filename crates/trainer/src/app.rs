@@ -78,6 +78,7 @@ pub struct TrainerApp {
     prompt_dialog: Option<PromptState>,
     about_dialog: bool,
     error_dialog: Option<String>,
+    startup_error_fatal: bool,
     timeout_dialog: bool,
     last_poll: Option<Instant>,
 }
@@ -133,7 +134,7 @@ impl TrainerApp {
             "state-radio",
             assets.sd("sd_icon01.png"),
         );
-        let splash = SplashState::new(&cc.egui_ctx, &assets);
+        let mut splash = SplashState::new(&cc.egui_ctx, &assets);
 
         let (hotkeys, error_dialog) = match HotkeyService::new() {
             Ok(service) => {
@@ -154,6 +155,11 @@ impl TrainerApp {
                 Some(text.hotkeys_failed.replace("{}", &error.to_string())),
             ),
         };
+        // 热键不可用时立即停止启动动画并提示，确认后直接退出。
+        let startup_error_fatal = error_dialog.is_some();
+        if startup_error_fatal {
+            splash.stop();
+        }
 
         Self {
             assets,
@@ -180,6 +186,7 @@ impl TrainerApp {
             prompt_dialog: None,
             about_dialog: false,
             error_dialog,
+            startup_error_fatal,
             timeout_dialog: false,
             last_poll: None,
         }
@@ -201,6 +208,10 @@ impl TrainerApp {
     }
 
     fn poll(&mut self, ctx: &egui::Context) {
+        // 启动时热键错误视为致命错误，确认后退出，不再扫描游戏进程。
+        if self.startup_error_fatal {
+            return;
+        }
         if self
             .session
             .as_ref()
@@ -869,6 +880,9 @@ impl TrainerApp {
         if let Some(message) = self.error_dialog.take() {
             if !dialogs::draw_error(ui, &message, self.language) {
                 self.error_dialog = Some(message);
+            } else if self.startup_error_fatal {
+                self.startup_error_fatal = false;
+                ctx.send_viewport_cmd(ViewportCommand::Close);
             }
             return;
         }
