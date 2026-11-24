@@ -4,7 +4,7 @@ use eframe::egui::{
     self, Align2, Color32, FontData, FontDefinitions, FontFamily, FontId, Pos2, Rect, Sense,
     Stroke, TextStyle, TextureHandle, Vec2, ViewportCommand,
 };
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -64,6 +64,7 @@ pub struct TrainerApp {
     multi_count: usize,
     game_detected: bool,
     game_wait_started: Option<Instant>,
+    cover_textures: HashMap<&'static str, TextureHandle>,
     cover_texture: Option<TextureHandle>,
     cover_name: Option<&'static str>,
     cover_flip: f32,
@@ -101,12 +102,16 @@ impl TrainerApp {
             })
             .collect();
 
+        let mut cover_textures = HashMap::new();
         let cover_texture = load_texture(
             &cc.egui_ctx,
             &assets,
-            "cover",
+            config::COVER_PLACEHOLDER,
             assets.card(config::COVER_PLACEHOLDER),
         );
+        if let Some(texture) = &cover_texture {
+            cover_textures.insert(config::COVER_PLACEHOLDER, texture.clone());
+        }
         let icon_texture = load_texture(&cc.egui_ctx, &assets, "app-icon", assets.icon());
         let multi_images = assets
             .sd_images_excluding("sd_icon01.png")
@@ -161,6 +166,7 @@ impl TrainerApp {
             multi_count: 0,
             game_detected: false,
             game_wait_started: None,
+            cover_textures,
             cover_texture,
             cover_name: Some(config::COVER_PLACEHOLDER),
             cover_flip: 0.0,
@@ -508,7 +514,12 @@ impl TrainerApp {
 
     fn set_cover(&mut self, ctx: &egui::Context, name: &'static str, bytes: Option<&'static [u8]>) {
         self.cover_name = Some(name);
-        if let Some(texture) = load_texture(ctx, &self.assets, "cover", bytes) {
+        if let Some(texture) = self.cover_textures.get(name) {
+            self.cover_texture = Some(texture.clone());
+            return;
+        }
+        if let Some(texture) = load_texture(ctx, &self.assets, name, bytes) {
+            self.cover_textures.insert(name, texture.clone());
             self.cover_texture = Some(texture);
         }
     }
