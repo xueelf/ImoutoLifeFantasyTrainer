@@ -1,7 +1,6 @@
 //! 已连接状态下的功能清单。
 
 use eframe::egui::{self, Align2, Rect, Sense, Stroke, Ui};
-use std::time::Duration;
 
 use crate::config::feature::{FeatureAction, FeatureDefinition};
 use crate::i18n::{self, Language};
@@ -105,10 +104,6 @@ pub fn draw(
         if response.clicked() {
             clicked = Some(view.definition.action);
         }
-    }
-
-    if interactive {
-        ui.ctx().request_repaint_after(Duration::from_millis(100));
     }
 
     clicked

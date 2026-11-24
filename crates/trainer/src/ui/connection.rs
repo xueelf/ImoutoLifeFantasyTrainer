@@ -60,6 +60,7 @@ fn draw_radio(
 
     if waiting {
         // 三个点依次闪烁，提示还在读取游戏数据。
+        ui.ctx().request_repaint();
         let time = ui.input(|input| input.time);
         for index in 0..3 {
             let alpha = (0.25
