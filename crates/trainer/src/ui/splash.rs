@@ -16,19 +16,19 @@ pub struct SplashState {
 
 impl SplashState {
     pub fn new(ctx: &egui::Context, assets: &AssetService) -> Self {
-        let mut textures = Vec::new();
-        let mut index = 0;
-        while let Some(bytes) = assets.logo(index) {
-            let Ok(image) = assets.load_color_image(bytes) else {
-                break;
-            };
-            textures.push(ctx.load_texture(
-                format!("splash-{index}"),
-                image,
-                egui::TextureOptions::LINEAR,
-            ));
-            index += 1;
-        }
+        let textures = assets
+            .logos()
+            .into_iter()
+            .enumerate()
+            .map_while(|(index, bytes)| {
+                let image = assets.load_color_image(bytes).ok()?;
+                Some(ctx.load_texture(
+                    format!("splash-{index}"),
+                    image,
+                    egui::TextureOptions::LINEAR,
+                ))
+            })
+            .collect();
 
         Self {
             active: true,

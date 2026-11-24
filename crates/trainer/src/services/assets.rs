@@ -3,26 +3,26 @@
 use anyhow::{Context, Result};
 use include_dir::{Dir, include_dir};
 
+use crate::config::COVER_PLACEHOLDER;
+
 static ASSETS: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
 pub struct AssetService {
-    cards: Vec<&'static str>,
-    logos: Vec<&'static str>,
+    cards: Vec<(&'static str, &'static [u8])>,
 }
 
 impl AssetService {
     pub fn new() -> Self {
-        // 预先排序，保证随机封面和启动动画的顺序稳定。
-        let mut cards = collect_files("images/card", ".jpg");
-        let mut logos = collect_files("images/logo", ".jpg");
-        cards.sort_unstable();
-        logos.sort_unstable();
-        Self { cards, logos }
+        // 预先排序，保证随机封面的候选顺序稳定。
+        Self {
+            cards: collect_entries("images/card", ".jpg"),
+        }
     }
 
     pub fn card(&self, file_name: &str) -> Option<&'static [u8]> {
-        let path = format!("images/card/{file_name}");
-        ASSETS.get_file(path).map(|file| file.contents())
+        self.cards
+            .iter()
+            .find_map(|&(name, bytes)| (name == file_name).then_some(bytes))
     }
 
     pub fn sd(&self, file_name: &str) -> Option<&'static [u8]> {
@@ -31,15 +31,9 @@ impl AssetService {
     }
 
     pub fn sd_images_excluding(&self, excluded: &str) -> Vec<(&'static str, &'static [u8])> {
-        let mut files = collect_files("images/sd", ".png");
-        files.sort_unstable();
-        files
+        collect_entries("images/sd", ".png")
             .into_iter()
-            .filter(|path| path.rsplit('/').next() != Some(excluded))
-            .filter_map(|path| {
-                let name = path.rsplit('/').next()?;
-                ASSETS.get_file(path).map(|file| (name, file.contents()))
-            })
+            .filter(|&(name, _)| name != excluded)
             .collect()
     }
 
@@ -48,27 +42,26 @@ impl AssetService {
         current: Option<&str>,
     ) -> Option<(&'static str, &'static [u8])> {
         // 排除占位封面和当前封面，避免连续两次抽到同一张。
-        let candidates: Vec<(&'static str, &'static str)> = self
+        let candidates: Vec<(&'static str, &'static [u8])> = self
             .cards
             .iter()
-            .filter_map(|path| {
-                let name = path.rsplit('/').next()?;
-                (name != "card0001.jpg" && Some(name) != current).then_some((*path, name))
-            })
+            .copied()
+            .filter(|&(name, _)| name != COVER_PLACEHOLDER && Some(name) != current)
             .collect();
 
         if candidates.is_empty() {
             return self
-                .card("card0001.jpg")
-                .map(|bytes| ("card0001.jpg", bytes));
+                .card(COVER_PLACEHOLDER)
+                .map(|bytes| (COVER_PLACEHOLDER, bytes));
         }
-        let (path, name) = candidates[fastrand::usize(..candidates.len())];
-        ASSETS.get_file(path).map(|file| (name, file.contents()))
+        Some(candidates[fastrand::usize(..candidates.len())])
     }
 
-    pub fn logo(&self, index: usize) -> Option<&'static [u8]> {
-        let path = *self.logos.get(index)?;
-        ASSETS.get_file(path).map(|file| file.contents())
+    pub fn logos(&self) -> Vec<&'static [u8]> {
+        collect_entries("images/logo", ".jpg")
+            .into_iter()
+            .map(|(_, bytes)| bytes)
+            .collect()
     }
 
     pub fn sound(&self, name: &str) -> Option<&'static [u8]> {
@@ -98,14 +91,22 @@ impl AssetService {
     }
 }
 
-fn collect_files(directory: &str, extension: &str) -> Vec<&'static str> {
-    ASSETS
+fn collect_entries(directory: &str, extension: &str) -> Vec<(&'static str, &'static [u8])> {
+    let mut entries: Vec<(&'static str, &'static [u8])> = ASSETS
         .get_dir(directory)
         .map(|dir| {
             dir.files()
-                .filter_map(|file| file.path().to_str())
-                .filter(|path| path.ends_with(extension))
+                .filter_map(|file| {
+                    let path = file.path().to_str()?;
+                    if !path.ends_with(extension) {
+                        return None;
+                    }
+                    let name = path.rsplit('/').next()?;
+                    Some((name, file.contents()))
+                })
                 .collect()
         })
-        .unwrap_or_default()
+        .unwrap_or_default();
+    entries.sort_unstable_by_key(|&(name, _)| name);
+    entries
 }
