@@ -21,6 +21,8 @@
 
 Windows 10/11 でのみ動作します。UI は中国語、英語、日本語に対応し、既定ではシステム言語に従います。
 
+古いバージョンの Windows を使用している場合は、[v1 リリース](https://github.com/xueelf/ImoutoLifeFantasyTrainer/releases/tag/v1.0.0)をダウンロードしてください。
+
 ## 使い方
 
 `ImoutoLifeFantasyTrainer.exe` をダブルクリックしてトレーナーを起動します。ゲームプロセスに自動的に接続されます。マウスでメニューをクリックするか、グローバルホットキーを使用できます。

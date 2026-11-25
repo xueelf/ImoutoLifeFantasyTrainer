@@ -21,6 +21,8 @@
 
 仅支持 Windows 10/11 运行。界面支持中文、英语和日语，默认跟随系统语言。
 
+如果仍在使用更旧的 Windows 版本，请下载 [v1 版本](https://github.com/xueelf/ImoutoLifeFantasyTrainer/releases/tag/v1.0.0)。
+
 ## 使用
 
 双击 `ImoutoLifeFantasyTrainer.exe` 运行修改器，程序会自动附加游戏进程。可以使用鼠标点击菜单，也可以使用全局热键。

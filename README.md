@@ -21,6 +21,8 @@ Download from [GitHub Releases](https://github.com/xueelf/ImoutoLifeFantasyTrain
 
 Runs only on Windows 10/11. The UI supports Chinese, English, and Japanese, and follows the system language by default.
 
+If you are using an older version of Windows, download the [v1 release](https://github.com/xueelf/ImoutoLifeFantasyTrainer/releases/tag/v1.0.0).
+
 ## Usage
 
 Double-click `ImoutoLifeFantasyTrainer.exe` to run the trainer. It attaches to the game process automatically. You can use the mouse to click the menu, or use the global hotkeys.
